@@ -21,16 +21,40 @@ def index(request):
 class ListCreateFoodView(generics.ListCreateAPIView):
     """
     GET foods/
-    POST food/
+    POST foods/
     """
     queryset = Food.objects.all()
     serializer_class = FoodSerializer
 
     @validate_request_data
     def post(self, request, *args, **kwargs):
-        user = User.objects.get(pk=request.data["user_id"])
-        new_food = Food.objects.create(user=user, name=request.data["name"])
+        new_food = Food.objects.create(user=request.user, name=request.data["name"])
         return Response(data=FoodSerializer(new_food).data, status=status.HTTP_201_CREATED)
+    
+    
+class CreateFoodBatchView(generics.ListCreateAPIView):
+    """
+    POST foods/batch/
+    API endpoint that allows multiple members to be created.
+    """
+    queryset = Food.objects.none()
+    serializer_class = FoodSerializer
+
+    def get_queryset(self):
+        queryset = Food.objects.all()
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, many=isinstance(request.data, list))
+        serializer.is_valid(raise_exception=True)
+        food_created = []
+        for list_elt in request.data:
+            food_obj = Food.objects.create(user=request.user, **list_elt)
+            food_created.append(food_obj.id)
+        results = Food.objects.filter(id__in=food_created)
+        output_serializer = FoodSerializer(results, many=True)
+        data = output_serializer.data[:]
+        return Response(data, status=status.HTTP_201_CREATED)
     
 class FoodDetailView(generics.RetrieveUpdateDestroyAPIView):
     """

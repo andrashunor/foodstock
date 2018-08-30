@@ -11,7 +11,9 @@ class UserSerializer(serializers.ModelSerializer):
 class FoodSerializer(serializers.ModelSerializer):
     class Meta:
         model = Food
-        fields = ('name', 'date_modified', 'is_on_stock')
+        fields = ('name', 'date_modified', 'is_on_stock', 'user')
+        read_only_fields = ('user', )
+
         
 class TokenSerializer(serializers.Serializer):
     """
