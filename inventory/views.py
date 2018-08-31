@@ -7,7 +7,7 @@ from rest_framework.views import status
 from rest_framework import generics, permissions
 from rest_framework_jwt.settings import api_settings
 
-from .decorators import validate_request_data
+from .decorators import validate_food_name, validate_food_names
 from .models import Food
 from .serializers import FoodSerializer, TokenSerializer, UserSerializer
 
@@ -26,8 +26,10 @@ class ListCreateFoodView(generics.ListCreateAPIView):
     queryset = Food.objects.all()
     serializer_class = FoodSerializer
 
-    @validate_request_data
+    @validate_food_name
     def post(self, request, *args, **kwargs):
+        serializer = FoodSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         new_food = Food.objects.create(user=request.user, name=request.data["name"])
         return Response(data=FoodSerializer(new_food).data, status=status.HTTP_201_CREATED)
     
@@ -43,7 +45,8 @@ class CreateFoodBatchView(generics.ListCreateAPIView):
     def get_queryset(self):
         queryset = Food.objects.all()
         return queryset
-
+    
+    @validate_food_names
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, many=isinstance(request.data, list))
         serializer.is_valid(raise_exception=True)
@@ -55,6 +58,19 @@ class CreateFoodBatchView(generics.ListCreateAPIView):
         output_serializer = FoodSerializer(results, many=True)
         data = output_serializer.data[:]
         return Response(data, status=status.HTTP_201_CREATED)
+    
+class ClearUserFoodView(generics.DestroyAPIView):
+    """
+    POST foods/clear/
+    API endpoint that allows user to clear all foods
+    """
+    queryset = Food.objects.none()
+    serializer_class = FoodSerializer
+    
+    def delete(self, request, *args, **kwargs):
+        user_foods = Food.objects.filter(user=request.user)
+        user_foods.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
     
 class FoodDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
@@ -77,7 +93,7 @@ class FoodDetailView(generics.RetrieveUpdateDestroyAPIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-    @validate_request_data
+    @validate_food_name
     def put(self, request, *args, **kwargs):
         try:
             a_food = self.queryset.get(pk=kwargs["pk"])
