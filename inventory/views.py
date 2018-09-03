@@ -7,7 +7,6 @@ from rest_framework.views import status
 from rest_framework import generics, permissions
 from rest_framework_jwt.settings import api_settings
 
-from .decorators import validate_food_name, validate_food_names
 from .models import Food
 from .serializers import FoodSerializer, TokenSerializer, UserSerializer
 
@@ -26,9 +25,8 @@ class ListCreateFoodView(generics.ListCreateAPIView):
     queryset = Food.objects.all()
     serializer_class = FoodSerializer
 
-    @validate_food_name
-    def post(self, request, *args, **kwargs):
-        serializer = FoodSerializer(data=request.data)
+    def post(self, request, *args, **kwargs):        
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         new_food = Food.objects.create(user=request.user, name=request.data["name"])
         return Response(data=FoodSerializer(new_food).data, status=status.HTTP_201_CREATED)
@@ -46,10 +44,21 @@ class CreateFoodBatchView(generics.ListCreateAPIView):
         queryset = Food.objects.all()
         return queryset
     
-    @validate_food_names
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, many=isinstance(request.data, list))
         serializer.is_valid(raise_exception=True)
+        
+#         # Only include a single error if required
+#         if serializer.errors:
+#             
+#             error = serializer.errors[0]
+#             return Response(
+#                 data={
+#                     "message": error["message"][0]
+#                 },
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+
         food_created = []
         for list_elt in request.data:
             food_obj = Food.objects.create(user=request.user, **list_elt)
@@ -93,11 +102,11 @@ class FoodDetailView(generics.RetrieveUpdateDestroyAPIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-    @validate_food_name
     def put(self, request, *args, **kwargs):
         try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
             a_food = self.queryset.get(pk=kwargs["pk"])
-            serializer = FoodSerializer()
             updated_food = serializer.update(a_food, request.data)
             return Response(FoodSerializer(updated_food).data)
         except Food.DoesNotExist:

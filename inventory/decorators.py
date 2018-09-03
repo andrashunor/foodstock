@@ -2,6 +2,8 @@ from rest_framework.response import Response
 from rest_framework.views import status
 from .models import Food
 
+# This class is not used currently in the project. Nonetheless is kept to provide useful example
+# Methods can be called by e.g. @validate_food_name in views
 
 def validate_food_name(fn):
     def decorated(*args, **kwargs):
