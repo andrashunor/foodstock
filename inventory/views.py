@@ -1,5 +1,5 @@
 from django.http import HttpResponse
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.auth import authenticate, login
 
 from rest_framework.response import Response
@@ -22,8 +22,13 @@ class ListCreateFoodView(generics.ListCreateAPIView):
     GET foods/
     POST foods/
     """
-    queryset = Food.objects.all()
+    queryset = Food.objects.none()
     serializer_class = FoodSerializer
+    
+    def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return Food.objects.none()
+        return Food.objects.filter(user=self.request.user)
 
     def post(self, request, *args, **kwargs):        
         serializer = self.get_serializer(data=request.data)
@@ -41,8 +46,9 @@ class CreateFoodBatchView(generics.ListCreateAPIView):
     serializer_class = FoodSerializer
 
     def get_queryset(self):
-        queryset = Food.objects.all()
-        return queryset
+        if self.request.user.is_anonymous:
+            return Food.objects.none()
+        return Food.objects.filter(user=self.request.user)
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, many=isinstance(request.data, list))
@@ -87,8 +93,13 @@ class FoodDetailView(generics.RetrieveUpdateDestroyAPIView):
     PUT food/:id/
     DELETE food/:id/
     """
-    queryset = Food.objects.all()
+    queryset = Food.objects.none()
     serializer_class = FoodSerializer
+    
+    def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return Food.objects.none()
+        return Food.objects.filter(user=self.request.user)
 
     def get(self, request, *args, **kwargs):
         try:
