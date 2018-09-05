@@ -115,6 +115,7 @@ REST_FRAMEWORK = {
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ],
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
 }
 
 # JWT settings

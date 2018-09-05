@@ -4,7 +4,7 @@ from .views import ListCreateFoodView, FoodDetailView, LoginView, RegisterUsers,
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path('foods/', ListCreateFoodView.as_view(), name="foods-all"),
+    path('foods/', ListCreateFoodView.as_view(), name="foods"),
     path('foods/batch/', CreateFoodBatchView.as_view(), name="foods-create-batch"),
     path('foods/clear/', ClearUserFoodView.as_view(), name="foods-clear"),
     path('foods/id=<int:pk>/', FoodDetailView.as_view(), name="food-detail"),

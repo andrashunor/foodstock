@@ -1,5 +1,5 @@
 from django.http import HttpResponse
-from django.contrib.auth.models import User, AnonymousUser
+from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
 
 from rest_framework.response import Response
@@ -103,7 +103,7 @@ class FoodDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get(self, request, *args, **kwargs):
         try:
-            a_food = self.queryset.get(pk=kwargs["pk"])
+            a_food = Food.objects.get(pk=kwargs["pk"])
             return Response(FoodSerializer(a_food).data)
         except Food.DoesNotExist:
             return Response(
@@ -117,7 +117,7 @@ class FoodDetailView(generics.RetrieveUpdateDestroyAPIView):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            a_food = self.queryset.get(pk=kwargs["pk"])
+            a_food = Food.objects.get(pk=kwargs["pk"])
             updated_food = serializer.update(a_food, request.data)
             return Response(FoodSerializer(updated_food).data)
         except Food.DoesNotExist:
@@ -130,7 +130,7 @@ class FoodDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         try:
-            a_food = self.queryset.get(pk=kwargs["pk"])
+            a_food = Food.objects.get(pk=kwargs["pk"])
             a_food.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Food.DoesNotExist:
