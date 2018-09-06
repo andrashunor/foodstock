@@ -43,7 +43,7 @@ class AllFoodsTest(BaseViewTest):
         
         # hit the API endpoint
         self.client.force_authenticate(self.user)
-        response = self.client.get(reverse("foods"))
+        response = self.client.get(reverse("food-list"))
         
         # fetch the data from db
         expected = Food.objects.all()
@@ -61,7 +61,7 @@ class AllFoodsTest(BaseViewTest):
         # hit the API endpoint
         no_foods_user = User.objects.create_user('no_food_user', 'a@b.com', 'password')
         self.client.force_authenticate(no_foods_user)
-        response = self.client.get(reverse("foods"))
+        response = self.client.get(reverse("food-list"))
         
         # fetch the data from db
         expected = Food.objects.filter(user=no_foods_user)
@@ -73,8 +73,7 @@ class AllFoodsTest(BaseViewTest):
     def test_delete_all_foods(self):
         
         """
-        This test ensures that no foods added in the setUp method
-        can be deleted by the foods-clear/ endpoint
+        This test ensures that no foods added in the setUp method can be deleted by the foods-clear/ endpoint
         """
                 
         # fetch the data from db
@@ -112,7 +111,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
         """
         
         # hit the API endpoint
-        response = self.client.post(reverse('foods'), {"name": "tomato"})
+        response = self.client.post(reverse('food-list'), {"name": "tomato"})
         
         # check response
         food = FoodSerializer(data=response.data)
@@ -122,7 +121,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
     def test_update_food(self):
         
         """
-        This test ensures that food gets updated when we make PUT call to the food-detail/ endpoint
+        This test ensures that food gets updated when we make PUT call to the foods/ endpoint
         """
         new_name = 'new_name'
         food = Food.objects.create(user=self.user, name='old_name')
@@ -137,7 +136,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
     def test_delete_food(self):
         
         """
-        This test ensures that food gets deleted when we make DELETE call to the food-detail/ endpoint
+        This test ensures that food gets deleted when we make DELETE call to the foods/ endpoint
         """
         food = Food.objects.create(user=self.user, name='test')
         
@@ -151,7 +150,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
     def test_get_food(self):
         
         """
-        This test ensures that food can be fetched when we make GET call to the food-detail/ endpoint
+        This test ensures that food can be fetched when we make GET call to the foods/ endpoint
         """
         food = Food.objects.create(user=self.user, name='test')
         
@@ -170,7 +169,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
         """
         
         # hit the API endpoint
-        response = self.client.post(reverse('foods-create-batch'), [{"name": "tomato"}, {"name": "tomato1"}, {"name": "tomato2"}, {"name": "tomato3"}])
+        response = self.client.post(reverse('food-list'), [{"name": "tomato"}, {"name": "tomato1"}, {"name": "tomato2"}, {"name": "tomato3"}])
         
         expected = Food.objects.filter(user=self.user)
         serialized = FoodSerializer(expected, many=True)
@@ -178,6 +177,24 @@ class FoodCRUDTest(AuthenticatedViewTest):
         # check response
         self.assertEqual(response.data, serialized.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+    def test_update_food_batch(self):
+        
+        """
+        This test ensures that multiple foods can be updated when we make PUT call to the foods-clear/ endpoint
+        """
+        
+        # NYI
+#         food = Food.objects.create(user=self.user, name="name")
+#         food1 = Food.objects.create(user=self.user, name="name1")
+#         food2 = Food.objects.create(user=self.user, name="name2")
+#         
+#         # hit the API endpoint
+#         response = self.client.post(reverse('food-detail'), [{"pk": str(food.id), "name": "tomato"}, {"pk": str(food1.id), "name": "tomato1"}, {"pk": str(food2.id), "name": "tomato2"}])
+#         
+#         food_names = [food.name, food1.name, food2.name]
+#         self.assertFalse(Food.objects.filter(name__in=food_names).exists(), 'Foods with these names should no longer exist')
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
     def test_food_name_unique(self):
         
@@ -187,7 +204,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
         
         # hit the API endpoint
         Food.objects.create(user=self.user, name='tomato')
-        response = self.client.post(reverse('foods'), {"name": "tomato"})
+        response = self.client.post(reverse('food-list'), {"name": "tomato"})
         
         # check response
         self.assertIsNotNone(response.data['message'], 'Response should contain error message')

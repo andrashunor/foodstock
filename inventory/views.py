@@ -10,6 +10,7 @@ from rest_framework_jwt.settings import api_settings
 from .models import Food
 from .serializers import FoodSerializer, TokenSerializer, UserSerializer
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import ModelViewSet
 
 
 # Get the JWT settings
@@ -19,10 +20,14 @@ jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 def index(request):
     return HttpResponse("Hello, my world!")
     
-class ListCreateFoodView(generics.ListCreateAPIView):
+class FoodViewSet(ModelViewSet):
+    
     """
-    GET foods/
-    POST foods/
+    ViewSet for Food model
+    POST food/
+    GET food/:id/
+    PUT food/:id/
+    DELETE food/:id/
     """
     queryset = Food.objects.none()
     serializer_class = FoodSerializer
@@ -32,30 +37,27 @@ class ListCreateFoodView(generics.ListCreateAPIView):
         if self.request.user.is_anonymous:
             return Food.objects.none()
         return Food.objects.filter(user=self.request.user)
+    
+    def not_found_response(self, pk=None):
+        return Response(data={"message": "Food with id: {} does not exist".format(pk)}, status=status.HTTP_404_NOT_FOUND)   
+     
+    def list(self, request):
+        food_list = self.serializer_class(self.get_queryset(), many=True)
+        return Response(food_list.data, status=status.HTTP_200_OK)
 
-    def post(self, request, *args, **kwargs):        
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        new_food = Food.objects.create(user=request.user, name=request.data["name"])
-        return Response(data=FoodSerializer(new_food).data, status=status.HTTP_201_CREATED)
-    
-    
-class CreateFoodBatchView(generics.ListCreateAPIView):
-    """
-    POST foods/batch/
-    API endpoint that allows multiple members to be created.
-    """
-    queryset = Food.objects.none()
-    serializer_class = FoodSerializer
-    permission_classes = (IsAuthenticated,)
-
-    def get_queryset(self):
-        if self.request.user.is_anonymous:
-            return Food.objects.none()
-        return Food.objects.filter(user=self.request.user)
-    
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data, many=isinstance(request.data, list))
+    def create(self, request):
+        
+        if not isinstance(request.data, list):
+            
+            # Single object creation
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            new_food = Food.objects.create(user=request.user, name=request.data["name"])
+            return Response(data=FoodSerializer(new_food).data, status=status.HTTP_201_CREATED)
+        
+        
+        # List creation
+        serializer = self.get_serializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
         
 #         # Only include a single error if required
@@ -78,7 +80,35 @@ class CreateFoodBatchView(generics.ListCreateAPIView):
         data = output_serializer.data[:]
         return Response(data, status=status.HTTP_201_CREATED)
     
-class ClearUserFoodView(generics.DestroyAPIView):
+    def retrieve(self, request, pk=None):
+        try:
+            a_food = self.get_queryset().get(pk=pk)
+            return Response(self.serializer_class(a_food).data, status=status.HTTP_200_OK)
+        except Food.DoesNotExist:
+            return self.not_found_response(pk=pk) 
+
+    def update(self, request, pk=None):
+        try:
+            a_food = self.get_queryset().get(pk=pk)
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            updated_food = serializer.update(a_food, request.data)
+            return Response(FoodSerializer(updated_food).data)
+        except Food.DoesNotExist:
+            return self.not_found_response(pk=pk)
+        
+    def partial_update(self, request, pk=None):
+        pass
+
+    def destroy(self, request, pk=None, **kwargs):
+        try:
+            a_food = self.get_queryset().get(pk=pk)
+            a_food.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Food.DoesNotExist:
+            return self.not_found_response(pk=pk)
+    
+class ClearUserFoodView(generics.RetrieveUpdateDestroyAPIView):
     """
     POST foods/clear/
     API endpoint that allows user to clear all foods
@@ -87,65 +117,37 @@ class ClearUserFoodView(generics.DestroyAPIView):
     serializer_class = FoodSerializer
     permission_classes = (IsAuthenticated,)
     
-    def delete(self, request, *args, **kwargs):
-        user_foods = Food.objects.filter(user=request.user)
-        user_foods.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
-class FoodDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    GET food/:id/
-    PUT food/:id/
-    DELETE food/:id/
-    """
-    queryset = Food.objects.none()
-    serializer_class = FoodSerializer
-    permission_classes = (IsAuthenticated,)
-
     def get_queryset(self):
         if self.request.user.is_anonymous:
             return Food.objects.none()
         return Food.objects.filter(user=self.request.user)
-
-    def get(self, request, *args, **kwargs):
-        try:
-            a_food = self.get_queryset().get(pk=kwargs["pk"])
-            return Response(FoodSerializer(a_food).data)
-        except Food.DoesNotExist:
-            return Response(
-                data={
-                    "message": "Food with id: {} does not exist".format(kwargs["pk"])
-                },
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-    def put(self, request, *args, **kwargs):
-        try:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            a_food = self.get_queryset().get(pk=kwargs["pk"])
-            updated_food = serializer.update(a_food, request.data)
-            return Response(FoodSerializer(updated_food).data)
-        except Food.DoesNotExist:
-            return Response(
-                data={
-                    "message": "Food with id: {} does not exist".format(kwargs["pk"])
-                },
-                status=status.HTTP_404_NOT_FOUND
-            )
-
+    
     def delete(self, request, *args, **kwargs):
-        try:
-            a_food = self.get_queryset().get(pk=kwargs["pk"])
-            a_food.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Food.DoesNotExist:
-            return Response(
-                data={
-                    "message": "Food with id: {} does not exist".format(kwargs["pk"])
-                },
-                status=status.HTTP_404_NOT_FOUND
-            )
+        self.get_queryset().delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    def put(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, many=isinstance(request.data, list))
+        serializer.is_valid(raise_exception=True)
+        
+        # Food update here
+        foods_updated = []
+        for list_elt in request.data:
+            try:
+                a_food = self.get_queryset().get(pk=kwargs["pk"])
+                updated_food = serializer.update(a_food,  **list_elt)
+                foods_updated.append(updated_food.id)
+            except Food.DoesNotExist:
+                return Response(
+                    data={
+                        "message": "Food with id: {} does not exist".format(kwargs["pk"])
+                    },
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        results = Food.objects.filter(id__in=foods_updated)
+        output_serializer = FoodSerializer(results, many=True)
+        data = output_serializer.data[:]
+        return Response(data, status=status.HTTP_201_CREATED)
 
 class LoginView(generics.CreateAPIView):
     """

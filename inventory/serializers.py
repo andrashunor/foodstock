@@ -23,7 +23,7 @@ class FoodListSerializer(serializers.ListSerializer):
         for food in data:
             food_name = food["name"]
             if food_name in names:
-                raise serializers.ValidationError({"message": "Duplicate names are forbidden. Name \"" + food_name + "\" appears twice in request"})
+                raise serializers.ValidationError({"message": "Duplicate names are forbidden. Name \"{}\" appears twice in request".format(food_name)})
             names.append(food_name)
         return data
         
@@ -49,7 +49,7 @@ class FoodSerializer(serializers.ModelSerializer):
         if name:
             duplicate_food = Food.objects.filter(user=user, name=name).first()
             if duplicate_food:
-                raise serializers.ValidationError({"message": "User already has food named \"" + duplicate_food.name + "\""})
+                raise serializers.ValidationError({"message": "User already has food named \"{}\"".format(duplicate_food.name)})
         return data
         
   
