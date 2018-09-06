@@ -9,6 +9,8 @@ from rest_framework_jwt.settings import api_settings
 
 from .models import Food
 from .serializers import FoodSerializer, TokenSerializer, UserSerializer
+from rest_framework.permissions import IsAuthenticated
+
 
 # Get the JWT settings
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
@@ -24,6 +26,7 @@ class ListCreateFoodView(generics.ListCreateAPIView):
     """
     queryset = Food.objects.none()
     serializer_class = FoodSerializer
+    permission_classes = (IsAuthenticated,)
     
     def get_queryset(self):
         if self.request.user.is_anonymous:
@@ -44,6 +47,7 @@ class CreateFoodBatchView(generics.ListCreateAPIView):
     """
     queryset = Food.objects.none()
     serializer_class = FoodSerializer
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         if self.request.user.is_anonymous:
@@ -81,6 +85,7 @@ class ClearUserFoodView(generics.DestroyAPIView):
     """
     queryset = Food.objects.none()
     serializer_class = FoodSerializer
+    permission_classes = (IsAuthenticated,)
     
     def delete(self, request, *args, **kwargs):
         user_foods = Food.objects.filter(user=request.user)
@@ -95,7 +100,8 @@ class FoodDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     queryset = Food.objects.none()
     serializer_class = FoodSerializer
-    
+    permission_classes = (IsAuthenticated,)
+
     def get_queryset(self):
         if self.request.user.is_anonymous:
             return Food.objects.none()
@@ -103,7 +109,7 @@ class FoodDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get(self, request, *args, **kwargs):
         try:
-            a_food = Food.objects.get(pk=kwargs["pk"])
+            a_food = self.get_queryset().get(pk=kwargs["pk"])
             return Response(FoodSerializer(a_food).data)
         except Food.DoesNotExist:
             return Response(
@@ -117,7 +123,7 @@ class FoodDetailView(generics.RetrieveUpdateDestroyAPIView):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            a_food = Food.objects.get(pk=kwargs["pk"])
+            a_food = self.get_queryset().get(pk=kwargs["pk"])
             updated_food = serializer.update(a_food, request.data)
             return Response(FoodSerializer(updated_food).data)
         except Food.DoesNotExist:
@@ -130,7 +136,7 @@ class FoodDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         try:
-            a_food = Food.objects.get(pk=kwargs["pk"])
+            a_food = self.get_queryset().get(pk=kwargs["pk"])
             a_food.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Food.DoesNotExist:
@@ -149,7 +155,6 @@ class LoginView(generics.CreateAPIView):
     # This permission class will over ride the global permission
     # class setting
     permission_classes = (permissions.AllowAny,)
-
     queryset = User.objects.all()
 
     def post(self, request, *args, **kwargs):

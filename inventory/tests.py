@@ -16,21 +16,21 @@ class BaseViewTest(APITestCase):
 
     def setUp(self):
         # add test data
-        superuser = User.objects.create_superuser('superuser', 'a@a.com', 'password')
-        self.assertIsNotNone(superuser, 'Superuser should exist')
-        self.create_food(superuser, "Tomato")
-        self.create_food(superuser, "Ham")
-        self.create_food(superuser, "Eggs")
-        self.create_food(superuser, "Butter")
+        self.user = User.objects.create_user('user', 'a@a.com', 'password')
+        self.assertIsNotNone(self.user, 'user should exist')
+        self.create_food(self.user, "Tomato")
+        self.create_food(self.user, "Ham")
+        self.create_food(self.user, "Eggs")
+        self.create_food(self.user, "Butter")
         
 class AuthenticatedViewTest(APITestCase):
     client = APIClient()
         
     def setUp(self):
-        # add test data
-        self.superuser = User.objects.create_superuser('superuser', 'a@b.com', 'password')
-        self.client.force_authenticate(self.superuser)
         
+        # add test data
+        self.user = User.objects.create_user('authuser', 'a@b.com', 'password')
+        self.client.force_authenticate(self.user)
         
 class AllFoodsTest(BaseViewTest):
   
@@ -42,8 +42,7 @@ class AllFoodsTest(BaseViewTest):
         """
         
         # hit the API endpoint
-        superuser = User.objects.get(username='superuser')
-        self.client.force_authenticate(superuser)
+        self.client.force_authenticate(self.user)
         response = self.client.get(reverse("foods"))
         
         # fetch the data from db
@@ -60,7 +59,7 @@ class AllFoodsTest(BaseViewTest):
         """
         
         # hit the API endpoint
-        no_foods_user = User.objects.create_superuser('no_food_user', 'a@b.com', 'password')
+        no_foods_user = User.objects.create_user('no_food_user', 'a@b.com', 'password')
         self.client.force_authenticate(no_foods_user)
         response = self.client.get(reverse("foods"))
         
@@ -77,19 +76,17 @@ class AllFoodsTest(BaseViewTest):
         This test ensures that no foods added in the setUp method
         can be deleted by the foods-clear/ endpoint
         """
-        
-        superuser = User.objects.get(username='superuser')
-        
+                
         # fetch the data from db
-        foods = Food.objects.filter(user=superuser)
+        foods = Food.objects.filter(user=self.user)
         self.assertNotEqual(foods.count(), 0, 'Foods should not be 0')
 
         # hit the API endpoint
-        self.client.force_authenticate(superuser)
+        self.client.force_authenticate(self.user)
         response = self.client.delete(reverse("foods-clear"))
         
         # fetch the data from db
-        expected = Food.objects.filter(user=superuser)
+        expected = Food.objects.filter(user=self.user)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(expected.count(), 0, 'Foods count should be 0')
     
@@ -102,7 +99,7 @@ class LoginTest(BaseViewTest):
         """
         
         client = APIClient()
-        is_successful = client.login(username='superuser', password='password')
+        is_successful = client.login(username='user', password='password')
         self.assertTrue(is_successful, 'Login should be successful')
         
     
@@ -128,7 +125,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
         This test ensures that food gets updated when we make PUT call to the food-detail/ endpoint
         """
         new_name = 'new_name'
-        food = Food.objects.create(user=self.superuser, name='old_name')
+        food = Food.objects.create(user=self.user, name='old_name')
         
         # hit the API endpoint
         response = self.client.put(reverse('food-detail', kwargs={'pk': food.id}), {"name": 'new_name'})
@@ -142,7 +139,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
         """
         This test ensures that food gets deleted when we make DELETE call to the food-detail/ endpoint
         """
-        food = Food.objects.create(user=self.superuser, name='test')
+        food = Food.objects.create(user=self.user, name='test')
         
         # hit the API endpoint
         response = self.client.delete(reverse('food-detail', kwargs={'pk': food.id}))
@@ -156,7 +153,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
         """
         This test ensures that food can be fetched when we make GET call to the food-detail/ endpoint
         """
-        food = Food.objects.create(user=self.superuser, name='test')
+        food = Food.objects.create(user=self.user, name='test')
         
         # hit the API endpoint
         response = self.client.get(reverse('food-detail', kwargs={'pk': food.id}))
@@ -175,7 +172,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
         # hit the API endpoint
         response = self.client.post(reverse('foods-create-batch'), [{"name": "tomato"}, {"name": "tomato1"}, {"name": "tomato2"}, {"name": "tomato3"}])
         
-        expected = Food.objects.filter(user=self.superuser)
+        expected = Food.objects.filter(user=self.user)
         serialized = FoodSerializer(expected, many=True)
         
         # check response
@@ -189,11 +186,27 @@ class FoodCRUDTest(AuthenticatedViewTest):
         """
         
         # hit the API endpoint
-        Food.objects.create(user=self.superuser, name='tomato')
+        Food.objects.create(user=self.user, name='tomato')
         response = self.client.post(reverse('foods'), {"name": "tomato"})
         
         # check response
         self.assertIsNotNone(response.data['message'], 'Response should contain error message')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+    def test_unauthorized_update(self):
+         
+        """
+        This test ensures that user is unable to update food that was not created by him when making PUT call to the foods/ endpoint
+        """
+         
+        user = User.objects.create_user('username', 'email', 'password')
+        food = Food.objects.create(user=user, name='tomato')
+         
+        # hit the API endpoint
+        response = self.client.put(reverse('food-detail', kwargs={'pk': food.id}), {"name": 'new_name'})
+         
+        # check response
+        self.assertIsNotNone(response.data['message'], 'Response should contain error message')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         
         
