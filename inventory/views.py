@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
+from django.db.models import Model
 
 from rest_framework.response import Response
 from rest_framework.views import status
@@ -17,8 +18,22 @@ from rest_framework.viewsets import ModelViewSet
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 
-def index(request):
-    return HttpResponse("Hello, my world!")
+def update_object(view=ModelViewSet, model=Model, request=None, pk=None, partial=False):
+    try:
+        an_object = view.get_queryset().get(pk=pk)
+        updated_serializer = view.get_serializer(an_object, data=request.data, partial=partial)
+        updated_serializer.is_valid(raise_exception=True)
+        updated_serializer.update(an_object, request.data)
+        return Response(updated_serializer.data)
+    except model.DoesNotExist:
+        
+        # Check for custom not found response on viewset
+        not_found_response = getattr(view, "not_found_response", None)
+        if callable(not_found_response):
+            return view.not_found_response(pk=pk)
+        
+        # Send back default not found response
+        return Response(data={"message": "{} with id: {} does not exist".format(model._meta.object_name, pk)}, status=status.HTTP_404_NOT_FOUND)
     
 class FoodViewSet(ModelViewSet):
     
@@ -42,8 +57,8 @@ class FoodViewSet(ModelViewSet):
             return Food.objects.none()
         return Food.objects.filter(user=self.request.user)
     
-    def not_found_response(self, pk=None):
-        return Response(data={"message": "Food with id: {} does not exist".format(pk)}, status=status.HTTP_404_NOT_FOUND)   
+#     def not_found_response(self, pk=None):
+#         return Response(data={"message": "Food with id: {} does not exist".format(pk)}, status=status.HTTP_404_NOT_FOUND)
     
     """
     Endpoints
@@ -66,7 +81,7 @@ class FoodViewSet(ModelViewSet):
     
     def update_all(self, request):
         
-        # GET /food?many=true&ids=[1,2,3]
+        # PUT /food?many=true&ids=[1,2,3]
         if 'many' in request.query_params:
             if request.query_params["many"]:
             # TODO: implement update all
@@ -143,19 +158,16 @@ class FoodViewSet(ModelViewSet):
     def update(self, request, pk=None):
         
         # PUT /food/:id
-        try:
-            a_food = self.get_queryset().get(pk=pk)
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            updated_food = serializer.update(a_food, request.data)
-            return Response(FoodSerializer(updated_food).data)
-        except Food.DoesNotExist:
-            return self.not_found_response(pk=pk)
+        return update_object(self, Food, request, pk)
         
     def partial_update(self, request, pk=None):
-        pass
+        
+        # PATCH /food/:id
+        return update_object(self, Food, request, pk, partial=True)
 
     def destroy(self, request, pk=None):
+        
+        # DELETE /food/:id
         try:
             a_food = self.get_queryset().get(pk=pk)
             a_food.delete()

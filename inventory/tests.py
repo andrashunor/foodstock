@@ -12,7 +12,7 @@ class BaseViewTest(APITestCase):
     @staticmethod
     def create_food(user=User(), name=""):
         if user != None and name != "":
-            Food.objects.create(user=user, name=name)
+            Food.objects.create(user=user, name=name, description="")
 
     def setUp(self):
         # add test data
@@ -85,10 +85,6 @@ class AllFoodsTest(BaseViewTest):
         query = "?clear=true"
         response = self.client.delete(reverse("food-list")+query)
         
-        somearray = ['lol', 'learning', 'python']
-        if 'notfunny' in somearray:
-            print(somearray['notfunny'])
-        
         # fetch the data from db
         expected = Food.objects.filter(user=self.user)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -116,14 +112,14 @@ class FoodCRUDTest(AuthenticatedViewTest):
         """
         
         # hit the API endpoint
-        response = self.client.post(reverse('food-list'), {"name": "tomato"})
+        response = self.client.post(reverse('food-list'), {"name": "tomato", "description": ""})
         
         # check response
         food = FoodSerializer(data=response.data)
         self.assertIsNotNone(food, 'Food from data should exist')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
                 
-    def test_update_food(self):
+    def test_successful_update_food(self):
         
         """
         This test ensures that food gets updated when we make PUT call to the food/:id endpoint
@@ -132,7 +128,39 @@ class FoodCRUDTest(AuthenticatedViewTest):
         food = Food.objects.create(user=self.user, name='old_name')
         
         # hit the API endpoint
-        response = self.client.put(reverse('food-detail', kwargs={'pk': food.id}), {"name": 'new_name'})
+        response = self.client.put(reverse('food-detail', kwargs={'pk': food.id}), {"name": 'new_name', "description": "new_description"})
+        
+        # check response
+        self.assertEqual(new_name, response.data["name"], 'Name should been updated')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+    def test_failed_update_food(self):
+        
+        """
+        This test ensures that food gets updated when we make PUT call to the food/:id endpoint
+        """
+        new_name = 'new_name'
+        food = Food.objects.create(user=self.user, name='old_name')
+        
+        # hit the API endpoint
+        response = self.client.put(reverse('food-detail', kwargs={'pk': food.id}), {"name": new_name})
+        
+        test_against = Food.objects.get(pk=food.id)
+        
+        # check response
+        self.assertNotEqual(test_against.name, new_name, 'New name should not be saved in the DB')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+    def test_partial_update_food(self):
+        
+        """
+        This test ensures that food gets partially updated when we make PATCH call to the food/:id endpoint
+        """
+        new_name = 'new_name'
+        food = Food.objects.create(user=self.user, name='old_name')
+        
+        # hit the API endpoint
+        response = self.client.patch(reverse('food-detail', kwargs={'pk': food.id}), {"name": 'new_name'})
         
         # check response
         self.assertEqual(new_name, response.data["name"], 'Name should been updated')
@@ -174,7 +202,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
         """
         
         # hit the API endpoint
-        response = self.client.post(reverse('food-list'), [{"name": "tomato"}, {"name": "tomato1"}, {"name": "tomato2"}, {"name": "tomato3"}])
+        response = self.client.post(reverse('food-list'), [{"name": "tomato", "description": ""}, {"name": "tomato1", "description": ""}, {"name": "tomato2", "description": ""}, {"name": "tomato3", "description": ""}])
         
         expected = Food.objects.filter(user=self.user)
         serialized = FoodSerializer(expected, many=True)
@@ -208,8 +236,8 @@ class FoodCRUDTest(AuthenticatedViewTest):
         """
         
         # hit the API endpoint
-        Food.objects.create(user=self.user, name='tomato')
-        response = self.client.post(reverse('food-list'), {"name": "tomato"})
+        Food.objects.create(user=self.user, name='tomato', description="")
+        response = self.client.post(reverse('food-list'), {"name": "tomato", "description": ""})
         
         # check response
         self.assertIsNotNone(response.data['message'], 'Response should contain error message')
@@ -225,7 +253,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
         food = Food.objects.create(user=user, name='tomato')
          
         # hit the API endpoint
-        response = self.client.put(reverse('food-detail', kwargs={'pk': food.id}), {"name": 'new_name'})
+        response = self.client.put(reverse('food-detail', kwargs={'pk': food.id}), {"name": 'new_name', "description": ""})
          
         # check response
         self.assertIsNotNone(response.data['message'], 'Response should contain error message')

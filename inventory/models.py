@@ -6,6 +6,7 @@ from django.utils import timezone
 class Food(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
+    description = models.CharField(max_length=100, null=False, blank=True)
     date_modified = models.DateTimeField(default=timezone.now)
     is_on_stock = models.BooleanField(default=False)
     
