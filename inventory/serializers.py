@@ -42,7 +42,6 @@ class FoodSerializer(serializers.ModelSerializer):
         """
                 
         # Get authenticated user
-        print("MyData", data)
         user = self.context['request'].user
         
         name = data.get("name", "")

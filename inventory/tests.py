@@ -38,7 +38,7 @@ class AllFoodsTest(BaseViewTest):
           
         """
         This test ensures that all foods added in the setUp method
-        exist when we make a GET request to the foods/ endpoint
+        exist when we make a GET request to the /food endpoint
         """
         
         # hit the API endpoint
@@ -55,7 +55,7 @@ class AllFoodsTest(BaseViewTest):
         
         """
         This test ensures that no foods added in the setUp method
-        can be accessed by unauthorized user when we make a GET request to the foods/ endpoint
+        can be accessed by unauthorized user when we make a GET request to the /food endpoint
         """
         
         # hit the API endpoint
@@ -73,7 +73,7 @@ class AllFoodsTest(BaseViewTest):
     def test_delete_all_foods(self):
         
         """
-        This test ensures that no foods added in the setUp method can be deleted by the foods-clear/ endpoint
+        This test ensures that no foods added in the setUp method can be deleted by the /food endpoint
         """
                 
         # fetch the data from db
@@ -82,7 +82,12 @@ class AllFoodsTest(BaseViewTest):
 
         # hit the API endpoint
         self.client.force_authenticate(self.user)
-        response = self.client.delete(reverse("foods-clear"))
+        query = "?clear=true"
+        response = self.client.delete(reverse("food-list")+query)
+        
+        somearray = ['lol', 'learning', 'python']
+        if 'notfunny' in somearray:
+            print(somearray['notfunny'])
         
         # fetch the data from db
         expected = Food.objects.filter(user=self.user)
@@ -107,7 +112,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
     def test_create_food(self):
         
         """
-        This test ensures that food can be created when we make POST call to the foods/ endpoint
+        This test ensures that food can be created when we make POST call to the /food endpoint
         """
         
         # hit the API endpoint
@@ -121,7 +126,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
     def test_update_food(self):
         
         """
-        This test ensures that food gets updated when we make PUT call to the foods/ endpoint
+        This test ensures that food gets updated when we make PUT call to the food/:id endpoint
         """
         new_name = 'new_name'
         food = Food.objects.create(user=self.user, name='old_name')
@@ -136,7 +141,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
     def test_delete_food(self):
         
         """
-        This test ensures that food gets deleted when we make DELETE call to the foods/ endpoint
+        This test ensures that food gets deleted when we make DELETE call to the food/:id endpoint
         """
         food = Food.objects.create(user=self.user, name='test')
         
@@ -150,7 +155,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
     def test_get_food(self):
         
         """
-        This test ensures that food can be fetched when we make GET call to the foods/ endpoint
+        This test ensures that food can be fetched when we make GET call to the food/:id endpoint
         """
         food = Food.objects.create(user=self.user, name='test')
         
@@ -199,7 +204,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
     def test_food_name_unique(self):
         
         """
-        This test ensures that user is unable to create multiple foods with the same name when making POST call to the foods/ endpoint
+        This test ensures that user is unable to create multiple foods with the same name when making POST call to the /food endpoint
         """
         
         # hit the API endpoint
@@ -213,7 +218,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
     def test_unauthorized_update(self):
          
         """
-        This test ensures that user is unable to update food that was not created by him when making PUT call to the foods/ endpoint
+        This test ensures that user is unable to update food that was not created by him when making PUT call to the food/:id endpoint
         """
          
         user = User.objects.create_user('username', 'email', 'password')

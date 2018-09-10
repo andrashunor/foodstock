@@ -24,10 +24,14 @@ class FoodViewSet(ModelViewSet):
     
     """
     ViewSet for Food model
-    POST food/
-    GET food/:id/
-    PUT food/:id/
-    DELETE food/:id/
+    GET food
+    POST food
+    DELETE food
+    PUT food
+    GET food/:id
+    PUT food/:id
+    PATCH food/:id
+    DELETE food/:id
     """
     queryset = Food.objects.none()
     serializer_class = FoodSerializer
@@ -40,13 +44,60 @@ class FoodViewSet(ModelViewSet):
     
     def not_found_response(self, pk=None):
         return Response(data={"message": "Food with id: {} does not exist".format(pk)}, status=status.HTTP_404_NOT_FOUND)   
-     
+    
+    """
+    Endpoints
+    """
+    
     def list(self, request):
+        
+        # GET /food
         food_list = self.serializer_class(self.get_queryset(), many=True)
         return Response(food_list.data, status=status.HTTP_200_OK)
+    
+    def delete_all(self, request):
+        
+        # GET /food?clear=true
+        if 'clear' in request.query_params:
+            if request.query_params["clear"]:
+                self.get_queryset().delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def update_all(self, request):
+        
+        # GET /food?many=true&ids=[1,2,3]
+        if 'many' in request.query_params:
+            if request.query_params["many"]:
+            # TODO: implement update all
+            
+#             serializer = self.get_serializer(data=request.data, many=isinstance(request.data, list))
+#             serializer.is_valid(raise_exception=True)
+#             
+#             # Food update here
+#             foods_updated = []
+#             for list_elt in request.data:
+#                 try:
+#                     a_food = self.get_queryset().get(pk=kwargs["pk"])
+#                     updated_food = serializer.update(a_food,  **list_elt)
+#                     foods_updated.append(updated_food.id)
+#                 except Food.DoesNotExist:
+#                     return Response(
+#                         data={
+#                             "message": "Food with id: {} does not exist".format(kwargs["pk"])
+#                         },
+#                         status=status.HTTP_404_NOT_FOUND
+#                     )
+#             results = Food.objects.filter(id__in=foods_updated)
+#             output_serializer = FoodSerializer(results, many=True)
+#             data = output_serializer.data[:]
+#             return Response(data, status=status.HTTP_200_OK)
+                return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def create(self, request):
         
+        # POST /food
         if not isinstance(request.data, list):
             
             # Single object creation
@@ -81,6 +132,8 @@ class FoodViewSet(ModelViewSet):
         return Response(data, status=status.HTTP_201_CREATED)
     
     def retrieve(self, request, pk=None):
+        
+        # GET /food/:id
         try:
             a_food = self.get_queryset().get(pk=pk)
             return Response(self.serializer_class(a_food).data, status=status.HTTP_200_OK)
@@ -88,6 +141,8 @@ class FoodViewSet(ModelViewSet):
             return self.not_found_response(pk=pk) 
 
     def update(self, request, pk=None):
+        
+        # PUT /food/:id
         try:
             a_food = self.get_queryset().get(pk=pk)
             serializer = self.get_serializer(data=request.data)
@@ -100,54 +155,14 @@ class FoodViewSet(ModelViewSet):
     def partial_update(self, request, pk=None):
         pass
 
-    def destroy(self, request, pk=None, **kwargs):
+    def destroy(self, request, pk=None):
         try:
             a_food = self.get_queryset().get(pk=pk)
             a_food.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Food.DoesNotExist:
             return self.not_found_response(pk=pk)
-    
-class ClearUserFoodView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    POST foods/clear/
-    API endpoint that allows user to clear all foods
-    """
-    queryset = Food.objects.none()
-    serializer_class = FoodSerializer
-    permission_classes = (IsAuthenticated,)
-    
-    def get_queryset(self):
-        if self.request.user.is_anonymous:
-            return Food.objects.none()
-        return Food.objects.filter(user=self.request.user)
-    
-    def delete(self, request, *args, **kwargs):
-        self.get_queryset().delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
-    def put(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data, many=isinstance(request.data, list))
-        serializer.is_valid(raise_exception=True)
-        
-        # Food update here
-        foods_updated = []
-        for list_elt in request.data:
-            try:
-                a_food = self.get_queryset().get(pk=kwargs["pk"])
-                updated_food = serializer.update(a_food,  **list_elt)
-                foods_updated.append(updated_food.id)
-            except Food.DoesNotExist:
-                return Response(
-                    data={
-                        "message": "Food with id: {} does not exist".format(kwargs["pk"])
-                    },
-                    status=status.HTTP_404_NOT_FOUND
-                )
-        results = Food.objects.filter(id__in=foods_updated)
-        output_serializer = FoodSerializer(results, many=True)
-        data = output_serializer.data[:]
-        return Response(data, status=status.HTTP_201_CREATED)
+
 
 class LoginView(generics.CreateAPIView):
     """
