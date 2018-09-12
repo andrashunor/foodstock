@@ -211,23 +211,23 @@ class FoodCRUDTest(AuthenticatedViewTest):
         self.assertEqual(response.data, serialized.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         
-    def test_update_food_batch(self):
+    def test_partial_update_food_batch(self):
         
         """
-        This test ensures that multiple foods can be updated when we make PUT call to the foods-clear/ endpoint
+        This test ensures that multiple foods can be updated when we make PATCH call to the foods-list/ endpoint
         """
         
-        # NYI
-#         food = Food.objects.create(user=self.user, name="name")
-#         food1 = Food.objects.create(user=self.user, name="name1")
-#         food2 = Food.objects.create(user=self.user, name="name2")
-#         
-#         # hit the API endpoint
-#         response = self.client.post(reverse('food-detail'), [{"pk": str(food.id), "name": "tomato"}, {"pk": str(food1.id), "name": "tomato1"}, {"pk": str(food2.id), "name": "tomato2"}])
-#         
-#         food_names = [food.name, food1.name, food2.name]
-#         self.assertFalse(Food.objects.filter(name__in=food_names).exists(), 'Foods with these names should no longer exist')
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        food = Food.objects.create(user=self.user, name="name", description="")
+        food1 = Food.objects.create(user=self.user, name="name1", description="")
+        food2 = Food.objects.create(user=self.user, name="name2", description="")
+         
+        # hit the API endpoint
+        query = "?many=true&ids={},{},{}".format(food.id, food1.id,food2.id)
+        response = self.client.patch(reverse('food-list')+query, [{"name": "tomato"}, {"name": "tomato1"}, {"name": "tomato2"}])
+         
+        food_names = [food.name, food1.name, food2.name]
+        self.assertFalse(Food.objects.filter(name__in=food_names).exists(), 'Foods with these names should no longer exist')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         
     def test_food_name_unique(self):
         

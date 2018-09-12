@@ -10,7 +10,8 @@ class CustomRouter(DefaultRouter):
                 'get': 'list',
                 'post': 'create',
                 'delete': 'delete_all',
-                'put': 'update_all'
+                'put': 'update_list',
+                'patch': "partial_update_list"
             },
             name='{basename}-list',
             detail=False,
