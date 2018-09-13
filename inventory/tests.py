@@ -89,6 +89,27 @@ class AllFoodsTest(BaseViewTest):
         expected = Food.objects.filter(user=self.user)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(expected.count(), 0, 'Foods count should be 0')
+        
+        
+    def test_etag_all_foods(self):
+        
+        """
+        This test ensures that foods are not returned after ETag has been to into the header when we make a get request to the /food endpoint
+        """
+        
+        # hit the API endpoint
+        self.client.force_authenticate(self.user)
+        response = self.client.get(reverse("food-list"))
+        
+        # fetch the data from db
+        expected = Food.objects.all()
+        serialized = FoodSerializer(expected, many=True)
+        self.assertEqual(response.data, serialized.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        header = {"HTTP_IF_NONE_MATCH": response["ETag"] }
+        second_response = self.client.get(reverse("food-list"), **header)
+        self.assertEqual(second_response.status_code, status.HTTP_304_NOT_MODIFIED, 'Status expectation failed')
     
 class LoginTest(BaseViewTest):
      
