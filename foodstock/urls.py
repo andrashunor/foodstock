@@ -16,8 +16,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework_jwt.views import obtain_jwt_token
+from rest_framework.schemas import get_schema_view
+from rest_framework_swagger.renderers import SwaggerUIRenderer, OpenAPIRenderer
+
+schema_view = get_schema_view(title='Foodstock API', renderer_classes=[OpenAPIRenderer, SwaggerUIRenderer], public=True)
 
 urlpatterns = [
+    path('api-docs/', schema_view, name='api-docs'),
     path('inventory/', include('inventory.urls')),
     path('api-token-auth/', obtain_jwt_token, name='create-token'),
     path('admin/', admin.site.urls),

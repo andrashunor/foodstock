@@ -170,6 +170,7 @@ class LoginView(generics.CreateAPIView):
 
     # This permission class will over ride the global permission
     # class setting
+    serializer_class = UserSerializer
     permission_classes = (permissions.AllowAny,)
     queryset = User.objects.all()
 
@@ -195,6 +196,7 @@ class RegisterUsers(generics.CreateAPIView):
     """
     POST auth/register/
     """
+    serializer_class = UserSerializer
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request, *args, **kwargs):
