@@ -66,8 +66,16 @@ class FoodViewSet(ModelViewSet):
     def list(self, request):
         
         # GET /food
-        food_list = self.serializer_class(self.get_queryset(), many=True)
-        return Response(food_list.data, status=status.HTTP_200_OK)
+        # Note: This is the default behavior defined in 'ListModelMixin' and deleting 'def list' would not change the behavior of the API. The code is only kept to provide an example.
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def create(self, request):
         
