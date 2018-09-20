@@ -306,7 +306,7 @@ class MockTest(APITestCase):
     
     @patch('inventory.services.FoodService.get_foods', return_value=[{'user': 1, 'name': 'Bread'}])
     @patch('inventory.services.FoodService.get_food', return_value={'user': 1, 'name': 'Bread'})
-    def test_embedded_mock(self, get_foods):
+    def test_embedded_mock(self, get_foods, get_food):
         
         """
         This test ensures that food can be fetched when we make GET call to the food/:id endpoint
