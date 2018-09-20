@@ -6,6 +6,9 @@ from .models import Food
 from .serializers import FoodSerializer
 from django.contrib.auth.models import User
 
+from unittest.mock import MagicMock, patch
+from inventory.services import FoodService
+
 class BaseViewTest(APITestCase):
     client = APIClient()
 
@@ -48,7 +51,7 @@ class AllFoodsTest(BaseViewTest):
         # fetch the data from db
         expected = Food.objects.all()
         serialized = FoodSerializer(expected, many=True)
-        self.assertEqual(response.data, serialized.data)
+        self.assertEqual(response.data["results"], serialized.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
     def test_get_no_foods(self):
@@ -66,8 +69,8 @@ class AllFoodsTest(BaseViewTest):
         # fetch the data from db
         expected = Food.objects.filter(user=no_foods_user)
         serialized = FoodSerializer(expected, many=True)
-        self.assertEqual(response.data, [], 'Response data should be empty')
-        self.assertEqual(response.data, serialized.data)
+        self.assertEqual(response.data["results"], [], 'Response data should be empty')
+        self.assertEqual(response.data["results"], serialized.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
     def test_delete_all_foods(self):
@@ -104,7 +107,7 @@ class AllFoodsTest(BaseViewTest):
         # fetch the data from db
         expected = Food.objects.all()
         serialized = FoodSerializer(expected, many=True)
-        self.assertEqual(response.data, serialized.data)
+        self.assertEqual(response.data["results"], serialized.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         header = {"HTTP_IF_NONE_MATCH": response["ETag"] }
@@ -279,5 +282,41 @@ class FoodCRUDTest(AuthenticatedViewTest):
         # check response
         self.assertIsNotNone(response.data['message'], 'Response should contain error message')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        
+        
+class MockTest(APITestCase):
+    client = APIClient()
+    user = None
+
+    def setUp(self):
+        self.user = User.objects.create_user('user', 'a@a.com', 'password')
+        self.client.force_authenticate(self.user)
+        Food.objects.create(user=self.user, name='Tomato', description="")
+        Food.objects.create(user=self.user, name='Butter', description="")
+
+
+    def test_simple_mock(self):
+
+        # Overwrite initial data
+        food = Food.objects.get(pk=1)
+        data = {'user': 1, 'name': 'Bread'}
+        FoodSerializer.initial_data = MagicMock(return_value=data)
+        serializer = FoodSerializer(food)
+        self.assertEqual(serializer.initial_data(), data)
+    
+    @patch('inventory.services.FoodService.get_foods', return_value=[{'user': 1, 'name': 'Bread'}])
+    @patch('inventory.services.FoodService.get_food', return_value={'user': 1, 'name': 'Bread'})
+    def test_embedded_mock(self, get_foods):
+        
+        """
+        This test ensures that food can be fetched when we make GET call to the food/:id endpoint
+        """
+        test_against_foods = FoodService().get_foods()
+        test_against_food = FoodService().get_food()
+        
+        mock_get_foods = [{'user': 1, 'name': 'Bread'}]
+        mock_get_food = {'user': 1, 'name': 'Bread'}
+        self.assertEqual(mock_get_foods, test_against_foods)
+        self.assertEqual(mock_get_food, test_against_food)
         
         
