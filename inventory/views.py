@@ -17,23 +17,6 @@ from inventory.services import FoodService
 # Get the JWT settings
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
-
-def update_object(view=ModelViewSet, model=Model, request=None, pk=None, partial=False):
-    try:
-        an_object = view.get_queryset().get(pk=pk)
-        updated_serializer = view.get_serializer(an_object, data=request.data, partial=partial)
-        updated_serializer.is_valid(raise_exception=True)
-        updated_serializer.save()
-        return Response(updated_serializer.data)
-    except model.DoesNotExist:
-        
-        # Check for custom not found response on viewset
-        not_found_response = getattr(view, "not_found_response", None)
-        if callable(not_found_response):
-            return view.not_found_response(pk=pk)
-        
-        # Send back default not found response
-        return Response(data={"message": "{} with id: {} does not exist".format(model._meta.object_name, pk)}, status=status.HTTP_404_NOT_FOUND)
     
 class FoodViewSet(ModelViewSet):
     
@@ -52,14 +35,6 @@ class FoodViewSet(ModelViewSet):
     serializer_class = FoodSerializer
     permission_classes = (IsAuthenticated,)
     
-    def get_queryset(self):
-        if self.request.user.is_anonymous:
-            return Food.objects.none()
-        return Food.objects.filter(user=self.request.user)
-    
-    def not_found_response(self, pk=None):
-        return Response(data={"message": "Food with id: {} does not exist".format(pk)}, status=status.HTTP_404_NOT_FOUND)
-    
     """
     Endpoints
     """
@@ -68,7 +43,7 @@ class FoodViewSet(ModelViewSet):
         
         # GET /food
         service = FoodService()
-        foods = service.get_foods()
+        foods = service.get_foods(user=self.request.user)
         queryset = self.filter_queryset(foods)
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -80,66 +55,46 @@ class FoodViewSet(ModelViewSet):
     def create(self, request):
         
         # POST /food
-        if not isinstance(request.data, list):
-            
-            # Single object creation
-            service = FoodService()
-            new_food = service.create_food(request.data, user=request.user)
-            return Response(data=service.data(new_food), status=status.HTTP_201_CREATED)
-        
-        
-        # List creation
-        serializer = self.get_serializer(data=request.data, many=True)
-        serializer.is_valid(raise_exception=True)
-        
-#         # Only include a single error if required
-#         if serializer.errors:
-#             
-#             error = serializer.errors[0]
-#             return Response(
-#                 data={
-#                     "message": error["message"][0]
-#                 },
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-
-        food_created = []
-        for list_elt in request.data:
-            food_obj = Food.objects.create(user=request.user, **list_elt)
-            food_created.append(food_obj.id)
-        results = Food.objects.filter(id__in=food_created)
-        output_serializer = FoodSerializer(results, many=True)
-        data = output_serializer.data[:]
-        return Response(data, status=status.HTTP_201_CREATED)
+        many = isinstance(request.data, list)
+        service = FoodService()
+        new_food = service.create_food(request.data, user=request.user)
+        return Response(data=service.data(new_food, many=many), status=status.HTTP_201_CREATED)
     
     def retrieve(self, request, pk=None):
         
         # GET /food/:id
-        try:
-            a_food = self.get_queryset().get(pk=pk)
-            return Response(self.serializer_class(a_food).data, status=status.HTTP_200_OK)
-        except Food.DoesNotExist:
-            return self.not_found_response(pk=pk) 
+        service = FoodService()
+        result = service.get_food(pk, user=request.user)
+        if isinstance(result, Exception):
+            return Response(result.args[0], status=result.args[1])
+        return Response(service.data(result), status=status.HTTP_200_OK)
 
     def update(self, request, pk=None):
         
         # PUT /food/:id
-        return update_object(self, Food, request, pk)
+        service = FoodService()
+        result = service.update_food(pk, data=request.data, user=request.user)
+        if isinstance(result, Exception):
+            return Response(result.args[0], status=result.args[1])
+        return Response(service.data(result), status=status.HTTP_200_OK)
         
     def partial_update(self, request, pk=None):
         
         # PATCH /food/:id
-        return update_object(self, Food, request, pk, partial=True)
-
+        service = FoodService()
+        result = service.update_food(pk, data=request.data, partial=True, user=request.user)
+        if isinstance(result, Exception):
+            return Response(result.args[0], status=result.args[1])
+        return Response(service.data(result), status=status.HTTP_200_OK)
+    
     def destroy(self, request, pk=None):
         
         # DELETE /food/:id
-        try:
-            a_food = self.get_queryset().get(pk=pk)
-            a_food.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Food.DoesNotExist:
-            return self.not_found_response(pk=pk)
+        service = FoodService()
+        result = service.delete_food(pk, user=request.user)
+        if isinstance(result, Exception):
+            return Response(result.args[0], status=result.args[1])
+        return Response(status=status.HTTP_204_NO_CONTENT)
         
     def delete_all(self, request):
         

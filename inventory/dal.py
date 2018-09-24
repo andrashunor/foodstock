@@ -2,36 +2,77 @@ from rest_framework.serializers import ModelSerializer
 from inventory.serializers import FoodSerializer
 from .models import Food
 from rest_framework.fields import empty
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework import status
 
 class BaseDataAccessLayer(object):
     serializer_class = ModelSerializer
     model = None
     
     def get_queryset(self):
+        
+        """ Default queryset """
         return self.model.objects.all()
     
     def get_list(self, **kwargs):
+        
+        """ Returns a list of model object filtered by kwargs """
         return self.get_queryset(**kwargs)
     
     def get_object(self, pk=None, **kwargs):
-        return self.get_queryset(**kwargs).get_object(pk)
-    
-    def update_object(self, data, partial=False, **kwargs):
-        return self.get_queryset(**kwargs).update_object(data, partial)
-    
+        
+        """ Return instance of model object or exception """
+        try:
+            return self.get_queryset(**kwargs).get(pk=pk)
+        except self.model.DoesNotExist:
+
+            # Send back default not found response
+            return ObjectDoesNotExist({"message": "{} with id: {} does not exist".format(self.model._meta.object_name, pk)}, status.HTTP_404_NOT_FOUND)
+        
     def create_object(self, data, **kwargs):
+        
+        """ Validates data, creates object, returns instance or exception """
         serializer = self.get_serializer(data=data, **kwargs)
         serializer.is_valid(raise_exception=True)
         return serializer.create(serializer.validated_data)
     
+    def update_object(self, pk, data, partial=False, **kwargs):
+        
+        """ Validates data, updates object, returns instance or exception """
+        result = self.get_object(pk, **kwargs)
+        if not isinstance(result, self.model):
+            
+            # Return exception
+            return result
+        
+        # Update and return instance
+        serializer = self.get_serializer(instance=result, data=data, partial=partial, **kwargs)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer.instance
+    
     def delete_object(self, pk, **kwargs):
-        self.get_object(pk, **kwargs)
-        return self.dal.delete_object(pk)
+        
+        """ Delete object, return None or exception """
+        result = self.get_object(pk, **kwargs)
+        if not isinstance(result, self.model):
+                    
+            # Return exception
+            return result
+        
+        # Delete object
+        result.delete()
+        return None
+
     
     def data(self, instance, many=False):
+        
+        """ Return json representation of the object instance(s) """
         return self.serializer_class(instance, many=many).data
     
     def get_serializer(self, instance=None, data=empty, *args, **kwargs):
+        
+        """ Get instance of the serializer class """
         return self.serializer_class(instance, data, *args, **kwargs)
 
 class FoodDAL(BaseDataAccessLayer):
@@ -43,21 +84,21 @@ class FoodDAL(BaseDataAccessLayer):
     
     def get_queryset(self, *args, **kwargs):
         
-        ''' Check for user object in kwargs and filter Foods for user '''
+        """ Check for user object in kwargs and filter Foods for user """
         user = self.authenticated_user(**kwargs)
         if user is None:
             return self.model.objects.none()
         return self.model.objects.filter(user=user)
     
-    def get_serializer(self, instance=None, data=empty, *args, **kwargs):
+    def get_serializer(self, instance=None, data=empty, partial=False, *args, **kwargs):
         
         """
-        Return the serializer instance that should be used for validating and
-        deserializing input, and for serializing output.
+        Get instance of the FoodSerializer class with user in context
         """
         user = self.authenticated_user(**kwargs)
         kwargs = {'context':{'user':user}}
-        return self.serializer_class(instance=instance, data=data, **kwargs)
+        many = isinstance(data, list)
+        return self.serializer_class(instance=instance, data=data, many=many, partial=partial, **kwargs)
     
     def authenticated_user(self, **kwargs):
         
