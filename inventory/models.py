@@ -1,6 +1,37 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.core.exceptions import ObjectDoesNotExist
+
+class BaseQuerySet(models.Manager):
+    serializer_class = None
+    
+    def get_object(self, pk=None):
+        try:
+            an_object = self.get(pk=pk)
+            return an_object
+        except self.model.DoesNotExist:
+
+            # Send back default not found response
+            return ObjectDoesNotExist({"message": "{} with id: {} does not exist".format(self.model._meta.object_name, pk)})
+        
+    def get_object_data(self, pk=None):
+        result = self.get_object(pk=1)
+        if isinstance(result, Exception):
+            return result
+        
+        return self.serializer_class(result).data
+    
+class FoodQuerySet(BaseQuerySet):
+    user = None
+    
+    def foods(self, user=None):
+        if user is None:
+            user = self.user
+            
+        if user.is_anonymous:
+            return self.model.objects.none()
+        return self.model.objects.filter(user=user)
 
 class Food(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

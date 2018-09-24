@@ -12,6 +12,7 @@ from .serializers import FoodSerializer, TokenSerializer, UserSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 from .decorators import validate_for_list_update
+from inventory.services import FoodService
 
 # Get the JWT settings
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
@@ -66,16 +67,15 @@ class FoodViewSet(ModelViewSet):
     def list(self, request):
         
         # GET /food
-        # Note: This is the default behavior defined in 'ListModelMixin' and deleting 'def list' would not change the behavior of the API. The code is only kept to provide an example.
-        queryset = self.filter_queryset(self.get_queryset())
-
+        service = FoodService()
+        foods = service.get_foods()
+        queryset = self.filter_queryset(foods)
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            data = service.data(page, many=True)
+            return self.get_paginated_response(data)
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        return Response(service.data(queryset, many=True))
 
     def create(self, request):
         
@@ -83,10 +83,9 @@ class FoodViewSet(ModelViewSet):
         if not isinstance(request.data, list):
             
             # Single object creation
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            new_food = Food.objects.create(user=request.user, name=request.data["name"])
-            return Response(data=FoodSerializer(new_food).data, status=status.HTTP_201_CREATED)
+            service = FoodService()
+            new_food = service.create_food(request.data, user=request.user)
+            return Response(data=service.data(new_food), status=status.HTTP_201_CREATED)
         
         
         # List creation

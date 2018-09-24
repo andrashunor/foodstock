@@ -1,47 +1,71 @@
-from .managers import FoodQuerySet
+from .dal import FoodDAL, BaseDataAccessLayer
 
 class ServiceBaseClass(object):
-    queryset = None
+    dal_class = BaseDataAccessLayer
+    dal = None
     
-    def get_list(self, pagination=False, **filters):
-        return self.queryset.filter(**filters)
+    def get_list(self, **kwargs):
+        return self.dal.get_list(**kwargs)
+    
+    def get_object(self, pk=None, **kwargs):
+        return self.dal.get_object(pk)
+    
+    def update_object(self, data, partial=False, **kwargs):
+        return self.dal.update_object(data, partial)
+    
+    def create_object(self, data, **kwargs):
+        return self.dal.create_object(data, **kwargs)
+    
+    def delete_object(self, pk, **kwargs):
+        return self.dal.delete_object(pk)
+    
+    def data(self, instance, many=False):
+        return self.dal.data(instance, many)
 
 class FoodService(ServiceBaseClass):
-        
-    def __init__(self, user=None, *args, **kwargs):
-        ServiceBaseClass.__init__(self, *args, **kwargs)
-        self.queryset = FoodQuerySet()
-        self.queryset.user = user
+    dal_class = FoodDAL
+    dal = None
     
-    def get_foods(self, pagination=False, **filters):
+    def __init__(self):
+        ServiceBaseClass.__init__(self)
+        self.dal = self.dal_class()
+    
+    def get_foods(self, **kwargs):
         
-        ''' Return Food list'''
-        return self.get_list(pagination)
+        ''' Return Food list '''
+        return super().get_list(**kwargs)
         
-#     def update_food_list(self, data, partial=False):
-#          
-#         ''' Update and return food list '''
-#          
-#     def clear_food_list(self):
-#          
-#         ''' Clear all foods for user return is_successful '''
-#          
-#     def update_food(self, pk, data, partial=False):
-#          
-#         ''' Update and return Food '''
-#         return Food.objects.get(pk=pk)
-#      
-#     def create_food(self, pk, data):
-#          
-#         ''' Create and return Food'''
-#     
-    def get_food(self, pk=None):
+    def update_food_list(self, data, partial=False, **kwargs):
+          
+        ''' Update and return food list '''
+        return super().update_food_list(data, partial, **kwargs)
+          
+    def clear_food_list(self, **kwargs):
+          
+        ''' Clear all foods for user return is_successful '''
+          
+    def update_food(self, pk, data, partial=False, **kwargs):
+          
+        ''' Update and return Food '''
+        return super().update_food(pk, data, partial, **kwargs)
+      
+    def create_food(self, data, **kwargs):
+          
+        ''' Create and return Food'''
+        return super().create_object(data, **kwargs)
+     
+    def get_food(self, pk=None, **kwargs):
          
         ''' Return Food for pk '''
-        FoodQuerySet().get_object(pk)
-
-# #         
-#     def delete_food(self, pk):
-#          
-#         ''' Delete food return is_successful '''
+        return super().get_food(pk, **kwargs)
+         
+    def delete_food(self, pk, **kwargs):
+          
+        ''' Delete food return is_successful '''
+        return super().delete_food(pk, **kwargs)
+        
+    def data(self, instance, many=False):
+        
+        ''' Data for instance '''
+        return super().data(instance, many)
 

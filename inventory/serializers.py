@@ -58,13 +58,17 @@ class FoodSerializer(serializers.ModelSerializer):
         read_only_fields = ('user', )
         list_serializer_class = FoodListSerializer
         
+    def create(self, validated_data):
+        validated_data['user'] = self.context['user']
+        return serializers.ModelSerializer.create(self, validated_data)
+        
     def validate(self, data):
         """
         Single food creation validation
         """
                   
         # Get authenticated user
-        user = self.context['request'].user
+        user = self.context['user']
           
         name = data.get("name", "")
         if name:
