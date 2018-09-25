@@ -111,5 +111,13 @@ class FoodDAL(BaseDataAccessLayer):
         if user.is_anonymous:
             return None
         return user
-
+    
+    def clear_food_list(self, **kwargs):
+        self.get_list(**kwargs).delete()
+        
+    def update_food_list(self, ids=None, data=None, partial=False, **kwargs):
+        serializer = self.get_serializer(data=data, many=True, partial=partial, **kwargs)
+        serializer.is_valid(raise_exception=True)
+        updated_objects = serializer.update(ids, data)
+        return updated_objects
     

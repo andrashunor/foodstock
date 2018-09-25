@@ -51,7 +51,7 @@ class FoodListSerializer(serializers.ListSerializer):
         # If all serializers are valid update the objects
         for serializer in valid_serializers:
             serializer.save()
-            updated_foods.append(serializer.data)
+            updated_foods.append(serializer.instance)
 
         return updated_foods
 

@@ -99,31 +99,30 @@ class FoodViewSet(ModelViewSet):
     def delete_all(self, request):
         
         # GET /food?clear=true
-        if 'clear' in request.query_params:
-            if request.query_params["clear"]:
-                self.get_queryset().delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        service = FoodService()
+        result = service.clear_food_list(params=self.request.query_params, user=self.request.user)
+        if isinstance(result, Exception):
+            return Response(result.args[0], status=result.args[1])
+        return Response(status=status.HTTP_204_NO_CONTENT)
     
     @validate_for_list_update
     def update_list(self, request):
         
         # PUT /food?many=true&ids=1,2,3
-        serializer = self.get_serializer(data=request.data, many=True, partial=False)
-        serializer.is_valid(raise_exception=True)
-        ids = request.query_params['ids'].split(',')
-        updated_data = serializer.update(ids, request.data)
-        return Response(updated_data)
+        service = FoodService()
+        result = service.update_food_list(params=request.query_params, data=request.data, user=self.request.user)
+        if isinstance(result, Exception):
+            return Response(result.args[0], status=result.args[1])
+        return Response(service.data(result, many=True), status=status.HTTP_200_OK)
     
-    @validate_for_list_update
     def partial_update_list(self, request):
         
         # PATCH /food?many=true&ids=1,2,3
-        serializer = self.get_serializer(data=request.data, many=True, partial=True)
-        serializer.is_valid(raise_exception=True)
-        ids = request.query_params['ids'].split(',')
-        updated_data = serializer.update(ids, request.data)
-        return Response(updated_data)
+        service = FoodService()
+        result = service.update_food_list(params=request.query_params, data=request.data, partial=True, user=self.request.user)
+        if isinstance(result, Exception):
+            return Response(result.args[0], status=result.args[1])
+        return Response(service.data(result, many=True), status=status.HTTP_200_OK)
 
 class LoginView(generics.CreateAPIView):
     """
