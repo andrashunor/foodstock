@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from inventory.serializers import FoodSerializer
+from .serializers import FoodSerializer
 from .models import Food
 from rest_framework.fields import empty
 from django.core.exceptions import ObjectDoesNotExist

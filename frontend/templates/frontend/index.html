@@ -1,0 +1,13 @@
+{% load static %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'frontend/style.css' %}" />
+
+{% if food_list %}
+    <ul>
+    {% for food in food_list %}
+		<li><a href="{% url 'frontend:detail' food.id %}">{{ food.name }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available.</p>
+{% endif %}

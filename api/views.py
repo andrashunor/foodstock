@@ -1,6 +1,5 @@
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
-from django.db.models import Model
 
 from rest_framework.response import Response
 from rest_framework.views import status
@@ -12,7 +11,7 @@ from .serializers import FoodSerializer, TokenSerializer, UserSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 from .decorators import validate_for_list_update
-from inventory.services import FoodService
+from .services import FoodService
 
 # Get the JWT settings
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
@@ -43,7 +42,7 @@ class FoodViewSet(ModelViewSet):
         
         # GET /food
         service = FoodService()
-        foods = service.get_foods(user=self.request.user)
+        foods = service.get_foods(user=request.user)
         queryset = self.filter_queryset(foods)
         page = self.paginate_queryset(queryset)
         if page is not None:

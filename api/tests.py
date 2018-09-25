@@ -7,7 +7,7 @@ from .serializers import FoodSerializer
 from django.contrib.auth.models import User
 
 from unittest.mock import MagicMock, patch
-from inventory.services import FoodService
+from .services import FoodService
 
 class BaseViewTest(APITestCase):
     client = APIClient()
@@ -304,8 +304,8 @@ class MockTest(APITestCase):
         serializer = FoodSerializer(food)
         self.assertEqual(serializer.initial_data(), data)
     
-    @patch('inventory.services.FoodService.get_foods', return_value=[{'user': 1, 'name': 'Bread'}])
-    @patch('inventory.services.FoodService.get_food', return_value={'user': 1, 'name': 'Bread'})
+    @patch('api.services.FoodService.get_foods', return_value=[{'user': 1, 'name': 'Bread'}])
+    @patch('api.services.FoodService.get_food', return_value={'user': 1, 'name': 'Bread'})
     def test_embedded_mock(self, get_foods, get_food):
         
         """
