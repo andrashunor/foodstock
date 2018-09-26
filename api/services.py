@@ -25,12 +25,26 @@ class ServiceBaseClass(object):
         return self.dal.data(instance, many)
 
 class FoodService(ServiceBaseClass):
+    cache = []
     dal_class = FoodDAL
     dal = None
     
-    def __init__(self):
-        ServiceBaseClass.__init__(self)
-        self.dal = self.dal_class()
+    """ Return cached object """
+    @classmethod
+    def __getCache(cls):
+        for o in FoodService.cache:
+            return o
+        return None
+    
+    """ Initilize the class and start processing """
+    def __new__(cls):
+        o = cls.__getCache()
+        if o:
+            return o
+        foodservice = super(FoodService, cls).__new__(cls)
+        foodservice.dal = cls.dal_class()
+        cls.cache.append(foodservice)
+        return foodservice
     
     def get_foods(self, **kwargs):
         

@@ -12,8 +12,7 @@ class IndexView(generic.ListView):
     
     def get_queryset(self):
         """
-        Return the last five published questions (not including those set to be
-        published in the future).
+        List of food object for user
         """
         
         user = User.objects.get(pk=1)
@@ -27,7 +26,7 @@ class DetailView(generic.DetailView):
     
     def get_object(self, queryset=None):
         """
-        Excludes any questions that aren't published yet.
+        Detail of specific food object for user
         """
         
         user = User.objects.get(pk=1)

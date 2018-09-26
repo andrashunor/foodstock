@@ -6,8 +6,25 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 
 class BaseDataAccessLayer(object):
+    cache = []
     serializer_class = ModelSerializer
     model = None
+
+    """ Return cached object """
+    @classmethod
+    def __getCache(cls):
+        for o in BaseDataAccessLayer.cache:
+            return o
+        return None
+    
+    """ Initilize the class and start processing """
+    def __new__(cls):
+        o = cls.__getCache()
+        if o:
+            return o
+        foodservice = super(BaseDataAccessLayer, cls).__new__(cls)
+        cls.cache.append(foodservice)
+        return foodservice
     
     def get_queryset(self):
         

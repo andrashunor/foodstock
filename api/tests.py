@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 
 from unittest.mock import MagicMock, patch
 from .services import FoodService
+from .dal import FoodDAL
 
 class BaseViewTest(APITestCase):
     client = APIClient()
@@ -283,7 +284,6 @@ class FoodCRUDTest(AuthenticatedViewTest):
         self.assertIsNotNone(response.data['message'], 'Response should contain error message')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         
-        
 class MockTest(APITestCase):
     client = APIClient()
     user = None
@@ -318,5 +318,18 @@ class MockTest(APITestCase):
         mock_get_food = {'user': 1, 'name': 'Bread'}
         self.assertEqual(mock_get_foods, test_against_foods)
         self.assertEqual(mock_get_food, test_against_food)
+
+class CacheTest(APITestCase):
+    
+    def test_service_cache(self):
         
+        a = FoodService()
+        test_against = FoodService()
+        self.assertEqual(a, test_against, 'Should be point to the same object')
+        
+    def test_dal_cache(self):
+        
+        a = FoodDAL()
+        test_against = FoodDAL()
+        self.assertEqual(a, test_against, 'Should be point to the same object')
         
