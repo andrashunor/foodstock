@@ -16,7 +16,7 @@ class FoodListSerializer(serializers.ListSerializer):
     
     def validate(self, data):
         """
-        Batch foods creation validation
+        List foods validation
         """
         
         # Get authenticated user 
@@ -29,6 +29,11 @@ class FoodListSerializer(serializers.ListSerializer):
         return data
     
     def update(self, ids_set, validated_data):
+        """
+        Update for list is ambiguous.
+        Custom logic is implemented here where ids are matched with data and only existing objects are updated
+        """
+        
         updated_foods = []
         valid_serializers = []
         
@@ -46,7 +51,7 @@ class FoodListSerializer(serializers.ListSerializer):
         # If all serializers are valid update the objects
         for serializer in valid_serializers:
             serializer.save()
-            updated_foods.append(serializer.data)
+            updated_foods.append(serializer.instance)
 
         return updated_foods
 
@@ -58,14 +63,22 @@ class FoodSerializer(serializers.ModelSerializer):
         read_only_fields = ('user', )
         list_serializer_class = FoodListSerializer
         
+    def create(self, validated_data):
+        """
+        Override default create method
+        """
+        
+        # Add user to data from context
+        validated_data['user'] = self.context['user']
+        return serializers.ModelSerializer.create(self, validated_data)
+        
     def validate(self, data):
         """
         Single food creation validation
         """
                   
         # Get authenticated user
-        user = self.context['request'].user
-          
+        user = self.context['user']
         name = data.get("name", "")
         if name:
             duplicate_food = Food.objects.filter(user=user, name=name).first()

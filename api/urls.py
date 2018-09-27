@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import FoodViewSet, LoginView, RegisterUsers
-from .routers import CustomRouter
+from common.routers import CustomRouter
 
 router = CustomRouter(trailing_slash=False)
 router.register(r'food', FoodViewSet)

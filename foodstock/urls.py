@@ -23,7 +23,8 @@ schema_view = get_schema_view(title='Foodstock API', renderer_classes=[OpenAPIRe
 
 urlpatterns = [
     path('api-docs/', schema_view, name='api-docs'),
-    path('inventory/', include('inventory.urls')),
+    path('api/', include('api.urls')),
+    path('', include('frontend.urls')),
     path('api-token-auth/', obtain_jwt_token, name='create-token'),
     path('admin/', admin.site.urls),
 ]
