@@ -304,15 +304,15 @@ class MockTest(APITestCase):
         serializer = FoodSerializer(food)
         self.assertEqual(serializer.initial_data(), data)
     
-    @patch('api.services.FoodService.get_foods', return_value=[{'user': 1, 'name': 'Bread'}])
-    @patch('api.services.FoodService.get_food', return_value={'user': 1, 'name': 'Bread'})
+    @patch('api.services.FoodService.get_list', return_value=[{'user': 1, 'name': 'Bread'}])
+    @patch('api.services.FoodService.get_object', return_value={'user': 1, 'name': 'Bread'})
     def test_embedded_mock(self, get_foods, get_food):
         
         """
         This test ensures that food can be fetched when we make GET call to the food/:id endpoint
         """
-        test_against_foods = FoodService().get_foods()
-        test_against_food = FoodService().get_food()
+        test_against_foods = FoodService().get_list()
+        test_against_food = FoodService().get_object()
         
         mock_get_foods = [{'user': 1, 'name': 'Bread'}]
         mock_get_food = {'user': 1, 'name': 'Bread'}

@@ -25,27 +25,27 @@ class FoodService(ServiceBaseClass):
         cls.cache.append(foodservice)
         return foodservice
     
-    def get_foods(self, **kwargs):
+    def get_list(self, **kwargs):
         
         ''' Return Food list '''
         return super().get_list(**kwargs)
     
-    def create_food(self, data, **kwargs):
+    def create_object(self, data, **kwargs):
           
         ''' Create and return Food'''
         return super().create_object(data, **kwargs)
     
-    def get_food(self, pk=None, **kwargs):
+    def get_object(self, pk=None, **kwargs):
          
         ''' Return Food for pk '''
         return super().get_object(pk, **kwargs)
           
-    def update_food(self, pk, data, partial=False, **kwargs):
+    def update_object(self, pk, data, partial=False, **kwargs):
           
         ''' Update and return Food '''
         return super().update_object(pk=pk, data=data, partial=partial, **kwargs)
          
-    def delete_food(self, pk, **kwargs):
+    def delete_object(self, pk, **kwargs):
           
         ''' Delete food return is_successful '''
         return super().delete_object(pk, **kwargs)
