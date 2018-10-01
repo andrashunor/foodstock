@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from .models import Food
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound 
+from api.models import Image
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -92,3 +93,17 @@ class TokenSerializer(serializers.Serializer):
     This serializer serializes the token data
     """
     token = serializers.CharField(max_length=255)
+    
+    
+class ImageSerializer(serializers.HyperlinkedModelSerializer):
+    owner = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='id'
+    )
+
+    class Meta:
+        model = Image
+        fields = '__all__'
+        read_only_fields = ('image', 'description')
+    
+

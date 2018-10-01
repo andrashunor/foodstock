@@ -3,3 +3,4 @@ djangorestframework==3.8.2
 djangorestframework-jwt==1.11.0
 django-rest-swagger==2.2.0
 PyJWT==1.6.1
+pillow==5.2.0
