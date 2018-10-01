@@ -1,11 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
-from django.db.models.fields.files import ImageField
-
-class Image(models.Model):
-    image = ImageField()
-    description = models.CharField(max_length=100, default="", null=True, blank=True)
+from api.image.models import Image
 
 class Food(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

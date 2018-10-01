@@ -306,8 +306,8 @@ class MockTest(APITestCase):
         serializer = FoodSerializer(food)
         self.assertEqual(serializer.initial_data(), data)
     
-    @patch('api.services.FoodService.get_list', return_value=[{'user': 1, 'name': 'Bread'}])
-    @patch('api.services.FoodService.get_object', return_value={'user': 1, 'name': 'Bread'})
+    @patch('api.food.services.FoodService.get_list', return_value=[{'user': 1, 'name': 'Bread'}])
+    @patch('api.food.services.FoodService.get_object', return_value={'user': 1, 'name': 'Bread'})
     def test_embedded_mock(self, get_foods, get_food):
         
         """

@@ -11,24 +11,10 @@ from .serializers import FoodSerializer, TokenSerializer, UserSerializer
 from rest_framework.permissions import IsAuthenticated
 from .services import FoodService
 from common.views import ServiceModelViewSet
-from rest_framework.viewsets import ModelViewSet
-from api.serializers import ImageSerializer
-from .models import Image
-from rest_framework.parsers import FormParser, MultiPartParser
 
 # Get the JWT settings
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
-
-class ImageViewSet(ModelViewSet):
-    
-    queryset = Image.objects.all()
-    serializer_class = ImageSerializer
-    parser_classes = (MultiPartParser, FormParser,)
-    permission_classes = (IsAuthenticated,)
-
-    def perform_create(self, serializer):
-        serializer.save(description=self.request.data.get('description'), image=self.request.data.get('image'))
     
 class FoodViewSet(ServiceModelViewSet):
     
