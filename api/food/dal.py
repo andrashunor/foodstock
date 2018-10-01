@@ -4,13 +4,14 @@ from rest_framework.fields import empty
 from common.dal import BaseDataAccessLayer
 
 class FoodDAL(BaseDataAccessLayer):
+    cache = []
     serializer_class = FoodSerializer
     model = Food
     
     """ Return cached object """
     @classmethod
     def __getCache(cls):
-        for o in BaseDataAccessLayer.cache:
+        for o in FoodDAL.cache:
             return o
         return None
     
@@ -19,20 +20,12 @@ class FoodDAL(BaseDataAccessLayer):
         o = cls.__getCache()
         if o:
             return o
-        food_dal = super(BaseDataAccessLayer, cls).__new__(cls)
+        food_dal = super(FoodDAL, cls).__new__(cls)
         cls.cache.append(food_dal)
         return food_dal
     
     def __init__(self, *args, **kwargs):
         BaseDataAccessLayer.__init__(self, *args, **kwargs)
-    
-    def get_queryset(self, *args, **kwargs):
-        
-        """ Check for user object in kwargs and filter Foods for user """
-        user = self.authenticated_user(**kwargs)
-        if user is None:
-            return self.model.objects.none()
-        return self.model.objects.filter(user=user)
     
     def get_serializer(self, instance=None, data=empty, partial=False, *args, **kwargs):
         

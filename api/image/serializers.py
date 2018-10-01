@@ -1,14 +1,11 @@
 from rest_framework import serializers
 from .models import Image
+from api.food.serializers import FoodSerializer
 
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
-    owner = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='id'
-    )
+    foods = FoodSerializer(many=True, read_only=True)
 
     class Meta:
         model = Image
-        fields = '__all__'
-        read_only_fields = ('image', 'description')
-    
+        fields = ('image', 'description', 'id', 'foods')
+        read_only_fields = ('foods', )
