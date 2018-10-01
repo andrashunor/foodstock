@@ -2,15 +2,13 @@ from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework.views import status
 
-from .models import Food, Image
+from .models import Food
 from .serializers import FoodSerializer
 from django.contrib.auth.models import User
 
 from unittest.mock import MagicMock, patch
 from .services import FoodService
 from .dal import FoodDAL
-from django.core.exceptions import ObjectDoesNotExist
-
 
 class BaseViewTest(APITestCase):
     client = APIClient()
@@ -334,38 +332,4 @@ class CacheTest(APITestCase):
         a = FoodDAL()
         test_against = FoodDAL()
         self.assertEqual(a, test_against, 'Should be point to the same object')
-        
-class FileUploadTests(APITestCase):
-
-    def setUp(self):
-        self.tearDown()
-        u = User.objects.create_user('test', password='test', email='test@test.test')
-        u.save()
-
-    def tearDown(self):
-        try:
-            u = User.objects.get_by_natural_key('test')
-            u.delete()
-
-        except ObjectDoesNotExist:
-            pass
-        Image.objects.all().delete()
-
-    def _create_test_file(self, path):
-        f = open(path, 'w')
-        f.write('test123\n')
-        f.close()
-        f = open(path, 'rb')
-        return {'image': f}
-
-    def test_upload_file(self):
-        url = reverse('image-list')
-        data = self._create_test_file('/tmp/test_upload')
-
-        # assert authenticated user can upload file
-        client = APIClient()
-        user = User.objects.get(username='test')
-        client.force_authenticate(user)
-        response = client.post(url, data, format='multipart')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         
