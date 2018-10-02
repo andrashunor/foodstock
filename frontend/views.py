@@ -1,6 +1,6 @@
 from django.views import generic
-from api.models import Food
-from api.services import FoodService
+from api.food.models import Food
+from api.food.services import FoodService
 from django.contrib.auth.models import User
 
 
@@ -17,7 +17,7 @@ class IndexView(generic.ListView):
         
         user = User.objects.get(pk=1)
         service = FoodService()
-        return service.get_foods(user=user)
+        return service.get_list(user=user)
 
 
 class DetailView(generic.DetailView):

@@ -4,14 +4,13 @@ from rest_framework.serializers import ModelSerializer
 from rest_framework.fields import empty
 
 class BaseDataAccessLayer(object):
-    cache = []
     serializer_class = ModelSerializer
     model = None
     
-    def get_queryset(self):
+    def get_queryset(self, **kwargs):
         
         """ Default queryset """
-        return self.model.objects.all()
+        return self.model.objects.filter(**kwargs)
     
     def get_list(self, **kwargs):
         
@@ -64,10 +63,10 @@ class BaseDataAccessLayer(object):
         return None
 
     
-    def data(self, instance, many=False):
+    def data(self, instance, many=False, **kwargs):
         
         """ Return json representation of the object instance(s) """
-        return self.serializer_class(instance, many=many).data
+        return self.serializer_class(instance, many=many, **kwargs).data
     
     def get_serializer(self, instance=None, data=empty, *args, **kwargs):
         

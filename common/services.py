@@ -19,5 +19,5 @@ class ServiceBaseClass(object):
     def delete_object(self, pk, **kwargs):
         return self.dal.delete_object(pk, **kwargs)
     
-    def data(self, instance, many=False):
-        return self.dal.data(instance, many)
+    def data(self, instance, many=False, **kwargs):
+        return self.dal.data(instance, many, **kwargs)

@@ -1,14 +1,6 @@
-from django.contrib.auth.models import User
 from .models import Food
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound 
-
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('username', 'email')
-        
 
 class FoodListSerializer(serializers.ListSerializer):
     class Meta:
@@ -87,8 +79,5 @@ class FoodSerializer(serializers.ModelSerializer):
         return data
   
         
-class TokenSerializer(serializers.Serializer):
-    """
-    This serializer serializes the token data
-    """
-    token = serializers.CharField(max_length=255)
+
+    
