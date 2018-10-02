@@ -25,6 +25,7 @@ urlpatterns = [
     path('api-docs/', schema_view, name='api-docs'),
     path('api/', include('api.food.urls')),
     path('api/', include('api.image.urls')),
+    path('api/', include('api.auth.urls')),
     path('', include('frontend.urls')),
     path('api-token-auth/', obtain_jwt_token, name='create-token'),
     path('admin/', admin.site.urls),
