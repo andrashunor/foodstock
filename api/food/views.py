@@ -32,7 +32,7 @@ class FoodViewSet(ServiceModelViewSet):
         
     def delete_all(self, request):
         
-        # GET /food?clear=true
+        # DELETE /food?clear=true
         service = FoodService()
         result = service.clear_food_list(params=self.request.query_params, user=self.request.user)
         if isinstance(result, Exception):
