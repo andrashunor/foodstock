@@ -18,6 +18,8 @@ from django.urls import include, path
 from rest_framework_jwt.views import obtain_jwt_token
 from rest_framework.schemas import get_schema_view
 from rest_framework_swagger.renderers import SwaggerUIRenderer, OpenAPIRenderer
+from django.conf import settings
+from django.conf.urls.static import static
 
 schema_view = get_schema_view(title='Foodstock API', renderer_classes=[OpenAPIRenderer, SwaggerUIRenderer], public=True)
 
@@ -30,3 +32,9 @@ urlpatterns = [
     path('api-token-auth/', obtain_jwt_token, name='create-token'),
     path('admin/', admin.site.urls),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL,document_root=settings.STATIC_ROOT) 
+    urlpatterns += static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)
+
+

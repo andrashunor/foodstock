@@ -15,7 +15,8 @@ class IndexView(generic.ListView):
         List of food object for user
         """
         
-        user = User.objects.get(pk=1)
+        # Just filter with first user for debug purposes
+        user = User.objects.all().first()
         service = FoodService()
         return service.get_list(user=user)
 
@@ -29,7 +30,8 @@ class DetailView(generic.DetailView):
         Detail of specific food object for user
         """
         
-        user = User.objects.get(pk=1)
+        # Just filter with first user for debug purposes
+        user = User.objects.all().first()
         if 'pk' in self.kwargs:
             service = FoodService()
             return service.get_object(pk=self.kwargs['pk'], user=user)

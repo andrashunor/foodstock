@@ -50,7 +50,7 @@ class FoodListSerializer(serializers.ListSerializer):
 class FoodSerializer(serializers.ModelSerializer):
     class Meta:
         model = Food
-        fields = ('name', 'date_modified', 'is_on_stock', 'user', "id", "description")
+        fields = ('name', 'date_modified', 'is_on_stock', 'user', 'id', 'description', 'image')
         extra_kwargs = {'description': {'required': True}}
         read_only_fields = ('user', )
         list_serializer_class = FoodListSerializer
