@@ -37,7 +37,11 @@ class ImageDAL(BaseDataAccessLayer):
         return self.serializer_class(instance=instance, data=data, many=many, partial=partial, **kwargs)
     
     def attach_foods(self, image=Image, foods=None):
-        kwargs = {'pk__in': foods}
+        if foods is None:
+            return image
+        ids = foods.split(',')
+        key = 'pk__in' if isinstance(ids, list) else 'pk'
+        kwargs = {key: ids}
         service = FoodService()
         foods = service.get_list(**kwargs)
         for food in foods:

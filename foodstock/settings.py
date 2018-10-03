@@ -161,8 +161,8 @@ JWT_AUTH = {
     'JWT_AUTH_COOKIE': None,
 }
 
-MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR + 'media/'
+MEDIA_ROOT =  os.path.join(os.path.dirname(BASE_DIR),"media")
+MEDIA_URL = '/media/'
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
