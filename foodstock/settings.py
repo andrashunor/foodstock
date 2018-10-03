@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'frontend.apps.FrontendConfig',
     'api.food.apps.FoodConfig',
     'api.image.apps.ImageConfig',
+    'api.ingredient.apps.IngredientConfig',
     'rest_framework',
     'rest_framework_swagger',
     'django.contrib.admin',
