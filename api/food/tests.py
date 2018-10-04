@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from unittest.mock import MagicMock, patch
 from .services import FoodService
 from .dal import FoodDAL
+from api.ingredient.models import Ingredient
 
 class BaseViewTest(APITestCase):
     client = APIClient()
@@ -283,6 +284,26 @@ class FoodCRUDTest(AuthenticatedViewTest):
         # check response
         self.assertIsNotNone(response.data['message'], 'Response should contain error message')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        
+    def test_ingredient_food_connection(self):
+        
+        """
+        This test ensures that the pk's of ingredients sent when creating food are attached to the object when making POST call to the /food-list endpoint
+        """
+        
+        ingredients1 = Ingredient.objects.create(name='Ingredient1', description="")
+        ingredients2 = Ingredient.objects.create(name='Ingredient2', description="")
+                
+        ingredientpks = [ingredients1.pk, ingredients2.pk]
+        
+        # hit the API endpoint
+        response = self.client.post(reverse('food-list'), {"name": "tomato", "description": "", "ingredients": ingredientpks})
+        
+        # check response
+        ingredient = FoodSerializer(data=response.data)
+        self.assertIsNotNone(ingredient, 'Food from data should exist')
+        self.assertEqual(ingredientpks, response.data['ingredients'], 'Should be the same list of pks')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         
 class MockTest(APITestCase):
     client = APIClient()

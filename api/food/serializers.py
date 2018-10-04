@@ -1,6 +1,7 @@
 from .models import Food
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound 
+from api.ingredient.models import Ingredient
 
 class FoodListSerializer(serializers.ListSerializer):
     class Meta:
@@ -48,7 +49,9 @@ class FoodListSerializer(serializers.ListSerializer):
         return updated_foods
 
 class FoodSerializer(serializers.ModelSerializer):
-    ingredients = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    
+    ''' Set up relationship between models where objects are referred by their pk. e.g. ingredients: [1, 2, 3] in body will attach ingredients to food if they exist '''
+    ingredients = serializers.PrimaryKeyRelatedField(many=True, queryset=Ingredient.objects.all(), required=False)
 
     class Meta:
         model = Food

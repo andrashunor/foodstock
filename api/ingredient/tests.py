@@ -6,8 +6,6 @@ from django.contrib.auth.models import User
 from api.food.models import Food
 from .models import Ingredient
 from .serializers import IngredientSerializer
-from .services import IngredientService
-from .dal import IngredientDAL
 
 class AuthenticatedViewTest(APITestCase):
     client = APIClient()
@@ -15,8 +13,8 @@ class AuthenticatedViewTest(APITestCase):
     def setUp(self):
         
         # add test data
-        user = User.objects.create_user('authuser', 'a@b.com', 'password')
-        self.client.force_authenticate(user)
+        self.user = User.objects.create_user('authuser', 'a@b.com', 'password')
+        self.client.force_authenticate(self.user)
 
 class IngredientCRUDTest(AuthenticatedViewTest):
     
@@ -122,3 +120,22 @@ class IngredientCRUDTest(AuthenticatedViewTest):
         # check response
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         
+    def test_ingredient_food_connection(self):
+        
+        """
+        This test ensures that the pk's of foods sent when creating ingredient are attached to the object when making POST call to the /ingredient-list endpoint
+        """
+        
+        food1 = Food.objects.create(user=self.user, name='food1', description="")
+        food2 = Food.objects.create(user=self.user, name='food2', description="")
+        
+        foodpks = [food1.pk, food2.pk]
+        
+        # hit the API endpoint
+        response = self.client.post(reverse('ingredient-list'), {"name": "tomato", "description": "", "foods": foodpks})
+        
+        # check response
+        ingredient = IngredientSerializer(data=response.data)
+        self.assertIsNotNone(ingredient, 'Ingredient from data should exist')
+        self.assertEqual(foodpks, response.data['foods'], 'Should be the same list of pks')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)

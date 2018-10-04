@@ -22,6 +22,3 @@ class IngredientDAL(BaseDataAccessLayer):
         dal = super(IngredientDAL, cls).__new__(cls)
         cls.cache.append(dal)
         return dal
-    
-    def __init__(self, *args, **kwargs):
-        BaseDataAccessLayer.__init__(self, *args, **kwargs)

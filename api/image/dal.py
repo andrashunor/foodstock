@@ -25,9 +25,6 @@ class ImageDAL(BaseDataAccessLayer):
         cls.cache.append(image_dal)
         return image_dal
     
-    def __init__(self, *args, **kwargs):
-        BaseDataAccessLayer.__init__(self, *args, **kwargs)
-    
     def get_serializer(self, instance=None, data=empty, partial=False, *args, **kwargs):
         
         """
