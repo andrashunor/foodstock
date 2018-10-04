@@ -162,7 +162,7 @@ class FoodCRUDTest(AuthenticatedViewTest):
     def test_failed_update_food(self):
         
         """
-        This test ensures that food gets updated when we make PUT call to the food/:id endpoint
+        This test ensures that food does not get updated when we make PUT call with partial data to the food/:id endpoint
         """
         new_name = 'new_name'
         food = Food.objects.create(user=self.user, name='old_name')

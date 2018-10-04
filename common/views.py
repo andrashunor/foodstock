@@ -45,6 +45,7 @@ class ServiceModelViewSet(ModelViewSet):
         # POST /object
         kwargs = { "user": request.user } if self.filter_by_user else {}
         many = isinstance(request.data, list)
+        kwargs['many'] = many
         service = self.service_class()
         new_object = service.create_object(request.data, **kwargs)
         return Response(data=service.data(new_object, many=many), status=status.HTTP_201_CREATED)

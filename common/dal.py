@@ -61,7 +61,6 @@ class BaseDataAccessLayer(object):
         # Delete object
         result.delete()
         return None
-
     
     def data(self, instance, many=False, **kwargs):
         

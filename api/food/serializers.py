@@ -48,9 +48,11 @@ class FoodListSerializer(serializers.ListSerializer):
         return updated_foods
 
 class FoodSerializer(serializers.ModelSerializer):
+    ingredients = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
     class Meta:
         model = Food
-        fields = ('name', 'date_modified', 'is_on_stock', 'user', 'id', 'description', 'image')
+        fields = ('name', 'date_modified', 'is_on_stock', 'user', 'id', 'description', 'image', 'ingredients')
         extra_kwargs = {'description': {'required': True}}
         read_only_fields = ('user', )
         list_serializer_class = FoodListSerializer
@@ -77,7 +79,3 @@ class FoodSerializer(serializers.ModelSerializer):
             if duplicate_food:
                 raise serializers.ValidationError({"message": "User already has food named \"{}\"".format(duplicate_food.name)})
         return data
-  
-        
-
-    
