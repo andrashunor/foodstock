@@ -1,11 +1,34 @@
-from .models import Food
+from .models import Food, Recipe
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound 
+from django.utils.functional import empty
 from api.ingredient.models import Ingredient
+
+class RecipeSerializer(serializers.ModelSerializer):
+    
+    food = serializers.PrimaryKeyRelatedField(many=False, queryset=Food.objects.all())
+    ingredient = serializers.PrimaryKeyRelatedField(many=False, queryset=Ingredient.objects.all())
+    
+    class Meta:
+        model = Recipe
+        fields = ('ingredient', 'food', 'amount')
+        
+    @staticmethod
+    def serializer_for_data(data=empty, new_object=None):
+        if not 'recipes' in data:
+            return None
+        recipes_list = data['recipes']
+        for elt in recipes_list:
+            if isinstance(new_object, Food):
+                elt['food'] = new_object.pk
+            elif isinstance(new_object, Ingredient):
+                elt['ingredient'] = new_object.pk
+            
+        return RecipeSerializer(data=recipes_list, many=True)
 
 class FoodListSerializer(serializers.ListSerializer):
     class Meta:
-        read_only_fields = ('user', )
+        read_only_fields = ('user', 'recipes')
     
     def validate(self, data):
         """
@@ -50,14 +73,16 @@ class FoodListSerializer(serializers.ListSerializer):
 
 class FoodSerializer(serializers.ModelSerializer):
     
-    ''' Set up relationship between models where objects are referred by their pk. e.g. ingredients: [1, 2, 3] in body will attach ingredients to food if they exist '''
-    ingredients = serializers.PrimaryKeyRelatedField(many=True, queryset=Ingredient.objects.all(), required=False)
-
+    recipes = RecipeSerializer(source='recipe_set', many=True, read_only=True)
+    user = serializers.ReadOnlyField(source='user.id')
+    
     class Meta:
         model = Food
-        fields = ('name', 'date_modified', 'is_on_stock', 'user', 'id', 'description', 'image', 'ingredients')
-        extra_kwargs = {'description': {'required': True}}
-        read_only_fields = ('user', )
+        fields = ('name', 'date_modified', 'is_on_stock', 'user', 'id', 'description', 'image', 'recipes')
+        extra_kwargs = {
+            'description': {'required': True}, 
+        }
+        read_only_fields = ('user', 'recipes')
         list_serializer_class = FoodListSerializer
         
     def create(self, validated_data):
@@ -67,7 +92,12 @@ class FoodSerializer(serializers.ModelSerializer):
         
         # Add user to data from context
         validated_data['user'] = self.context['user']
-        return serializers.ModelSerializer.create(self, validated_data)
+        new_object = serializers.ModelSerializer.create(self, validated_data)
+        serializer = RecipeSerializer.serializer_for_data(self.initial_data, new_object)
+        if serializer:
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        return new_object
         
     def validate(self, data):
         """

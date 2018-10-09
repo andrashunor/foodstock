@@ -22,3 +22,7 @@ class IngredientService(ServiceBaseClass):
         service.dal = cls.dal_class()
         cls.cache.append(service)
         return service
+    
+    def create_ingredient(self, data, **kwargs):
+        
+        return ServiceBaseClass.create_object(self, data, **kwargs)

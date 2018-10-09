@@ -21,7 +21,6 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=50, unique=True)),
                 ('description', models.CharField(blank=True, max_length=100)),
                 ('is_on_stock', models.BooleanField(default=False)),
-                ('foods', models.ManyToManyField(related_name='ingredients', to='food.Food')),
                 ('image', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='ingredients', to='image.Image')),
             ],
         ),

@@ -6,6 +6,8 @@ from django.contrib.auth.models import User
 from api.food.models import Food
 from .models import Ingredient
 from .serializers import IngredientSerializer
+from api.ingredient.services import IngredientService
+from api import ingredient
 
 class AuthenticatedViewTest(APITestCase):
     client = APIClient()
@@ -132,10 +134,45 @@ class IngredientCRUDTest(AuthenticatedViewTest):
         foodpks = [food1.pk, food2.pk]
         
         # hit the API endpoint
-        response = self.client.post(reverse('ingredient-list'), {"name": "tomato", "description": "", "foods": foodpks})
+        response = self.client.post(reverse('ingredient-list'),
+        {
+        "name": "tomato",
+        "description": "",
+        "recipes": [
+            {
+                "food": food1.pk,
+                "amount": 10
+            },
+            {
+                "food": food2.pk,
+                "amount": 10
+            }
+        ]
+        })
+        
+        recipes = response.data['recipes']
+        test_against = []
+        for recipe in recipes:
+            test_against.append(recipe['food'])
         
         # check response
         ingredient = IngredientSerializer(data=response.data)
         self.assertIsNotNone(ingredient, 'Ingredient from data should exist')
-        self.assertEqual(foodpks, response.data['foods'], 'Should be the same list of pks')
+        self.assertEqual(foodpks, test_against, 'Should be the same list of pks')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        
+    def test_ingredient_with_recipe_creation(self):
+        
+        food = Food.objects.create(user=self.user, name='food1', description="")
+        service = IngredientService()
+        data = {
+            "name":"Salty",
+            "description": "",
+            "recipes": [{
+                "food": food.pk,
+                "amount": 10
+            }]
+        }
+        ingredient = service.create_ingredient(data)
+        self.assertIsNotNone(ingredient.recipe_set, 'Should contain recipes')

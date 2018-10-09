@@ -22,3 +22,5 @@ class IngredientDAL(BaseDataAccessLayer):
         dal = super(IngredientDAL, cls).__new__(cls)
         cls.cache.append(dal)
         return dal
+       
+        
