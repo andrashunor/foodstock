@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import NotFound 
 from django.utils.functional import empty
 from api.ingredient.models import Ingredient
+from rest_framework.validators import UniqueTogetherValidator    
 
 class RecipeSerializer(serializers.ModelSerializer):
     
@@ -12,9 +13,17 @@ class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('ingredient', 'food', 'amount')
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Recipe.objects.all(),
+                fields=('food', 'ingredient')
+            )
+        ]
         
     @staticmethod
     def serializer_for_data(data=empty, new_object=None):
+        
+        ''' Create a recipe serializer instance if the data includes recipes '''
         if not 'recipes' in data:
             return None
         recipes_list = data['recipes']
@@ -23,8 +32,24 @@ class RecipeSerializer(serializers.ModelSerializer):
                 elt['food'] = new_object.pk
             elif isinstance(new_object, Ingredient):
                 elt['ingredient'] = new_object.pk
-            
+        
+        recipes_list = RecipeSerializer.remove_duplicates(recipes_list)
         return RecipeSerializer(data=recipes_list, many=True)
+    
+    @staticmethod
+    def remove_duplicates(data=empty):
+        
+        ''' Remove duplicate data based on unique fields, if duplicate data is posted only the first will be used '''
+        
+        # Beware this is smelly code, try to refactor later
+        recipes = []
+        for recipe in data:
+            recipe_unique = (recipe["food"], recipe["ingredient"])
+            if recipe_unique in recipes:
+                data.remove(recipe)
+            else:
+                recipes.append(recipe_unique)
+        return data
 
 class FoodListSerializer(serializers.ListSerializer):
     class Meta:

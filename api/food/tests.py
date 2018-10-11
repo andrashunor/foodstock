@@ -326,6 +326,42 @@ class FoodCRUDTest(AuthenticatedViewTest):
         self.assertEqual(ingredientpks, test_against, 'Should be the same list of pks')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         
+    def test_unique_recipe(self):
+        
+        """
+        This test ensures that the pk's of ingredients sent when creating food are attached to the object when making POST call to the /food-list endpoint
+        """
+        
+        ingredient1 = Ingredient.objects.create(name='Ingredient1', description="")
+                        
+        # hit the API endpoint
+        response = self.client.post(reverse('food-list'),
+        {
+        "name": "tomato",
+        "description": "",
+        "recipes": [
+            {
+                "ingredient": ingredient1.pk,
+                "amount": 10
+            },
+            {
+                "ingredient": ingredient1.pk,
+                "amount": 10
+            }
+        ]
+        })
+        
+        # check response
+        recipes = response.data['recipes']
+        test_against = []
+        for recipe in recipes:
+            test_against.append(recipe['ingredient'])
+                
+        food = FoodSerializer(data=response.data)
+        self.assertIsNotNone(food, 'Food from data should exist')
+        self.assertEqual([ingredient1.pk], test_against, 'Should be the same list of pks')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
 class MockTest(APITestCase):
     client = APIClient()
     user = None
