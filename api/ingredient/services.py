@@ -23,6 +23,9 @@ class IngredientService(ServiceBaseClass):
         cls.cache.append(service)
         return service
     
+    def get_list(self, params, **kwargs):
+        return self.dal.get_list(params, **kwargs)
+    
     def create_ingredient(self, data, **kwargs):
         
         return ServiceBaseClass.create_object(self, data, **kwargs)
