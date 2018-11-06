@@ -1,10 +1,59 @@
-from .models import Food
+from .models import Food, Recipe
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound 
+from django.utils.functional import empty
+from api.ingredient.models import Ingredient
+from rest_framework.validators import UniqueTogetherValidator    
+
+class RecipeSerializer(serializers.ModelSerializer):
+    
+    food = serializers.PrimaryKeyRelatedField(many=False, queryset=Food.objects.all())
+    ingredient = serializers.PrimaryKeyRelatedField(many=False, queryset=Ingredient.objects.all())
+    
+    class Meta:
+        model = Recipe
+        fields = ('ingredient', 'food', 'amount')
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Recipe.objects.all(),
+                fields=('food', 'ingredient')
+            )
+        ]
+        
+    @staticmethod
+    def serializer_for_data(data=empty, new_object=None):
+        
+        ''' Create a recipe serializer instance if the data includes recipes '''
+        if not 'recipes' in data:
+            return None
+        recipes_list = data['recipes']
+        for elt in recipes_list:
+            if isinstance(new_object, Food):
+                elt['food'] = new_object.pk
+            elif isinstance(new_object, Ingredient):
+                elt['ingredient'] = new_object.pk
+        
+        recipes_list = RecipeSerializer.remove_duplicates(recipes_list)
+        return RecipeSerializer(data=recipes_list, many=True)
+    
+    @staticmethod
+    def remove_duplicates(data=empty):
+        
+        ''' Remove duplicate data based on unique fields, if duplicate data is posted only the first will be used '''
+        
+        # Beware this is smelly code, try to refactor later
+        recipes = []
+        for recipe in data:
+            recipe_unique = (recipe["food"], recipe["ingredient"])
+            if recipe_unique in recipes:
+                data.remove(recipe)
+            else:
+                recipes.append(recipe_unique)
+        return data
 
 class FoodListSerializer(serializers.ListSerializer):
     class Meta:
-        read_only_fields = ('user', )
+        read_only_fields = ('user', 'recipes')
     
     def validate(self, data):
         """
@@ -48,11 +97,17 @@ class FoodListSerializer(serializers.ListSerializer):
         return updated_foods
 
 class FoodSerializer(serializers.ModelSerializer):
+    
+    recipes = RecipeSerializer(source='recipe_set', many=True, read_only=True)
+    user = serializers.ReadOnlyField(source='user.id')
+    
     class Meta:
         model = Food
-        fields = ('name', 'date_modified', 'is_on_stock', 'user', 'id', 'description', 'image')
-        extra_kwargs = {'description': {'required': True}}
-        read_only_fields = ('user', )
+        fields = ('name', 'date_modified', 'is_on_stock', 'user', 'id', 'description', 'image', 'recipes')
+        extra_kwargs = {
+            'description': {'required': True}, 
+        }
+        read_only_fields = ('user', 'recipes')
         list_serializer_class = FoodListSerializer
         
     def create(self, validated_data):
@@ -62,7 +117,12 @@ class FoodSerializer(serializers.ModelSerializer):
         
         # Add user to data from context
         validated_data['user'] = self.context['user']
-        return serializers.ModelSerializer.create(self, validated_data)
+        new_object = serializers.ModelSerializer.create(self, validated_data)
+        serializer = RecipeSerializer.serializer_for_data(self.initial_data, new_object)
+        if serializer:
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        return new_object
         
     def validate(self, data):
         """
@@ -77,7 +137,3 @@ class FoodSerializer(serializers.ModelSerializer):
             if duplicate_food:
                 raise serializers.ValidationError({"message": "User already has food named \"{}\"".format(duplicate_food.name)})
         return data
-  
-        
-
-    

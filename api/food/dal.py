@@ -24,9 +24,6 @@ class FoodDAL(BaseDataAccessLayer):
         cls.cache.append(food_dal)
         return food_dal
     
-    def __init__(self, *args, **kwargs):
-        BaseDataAccessLayer.__init__(self, *args, **kwargs)
-    
     def get_serializer(self, instance=None, data=empty, partial=False, *args, **kwargs):
         
         """
