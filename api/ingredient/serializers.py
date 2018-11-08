@@ -18,7 +18,7 @@ class IngredientSerializer(serializers.ModelSerializer):
         
         # Add user to data from context
         new_object = serializers.ModelSerializer.create(self, validated_data)
-        serializer = RecipeSerializer.serializer_for_data(self.initial_data, new_object)
+        serializer = RecipeSerializer.handle_data(self.initial_data, new_object)
         if serializer:
             serializer.is_valid(raise_exception=True)
             serializer.save()

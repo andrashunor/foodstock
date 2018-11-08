@@ -12,7 +12,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Recipe
-        fields = ('ingredient', 'food', 'amount')
+        fields = ('ingredient', 'food', 'amount', 'id')
         validators = [
             UniqueTogetherValidator(
                 queryset=Recipe.objects.all(),
@@ -21,21 +21,51 @@ class RecipeSerializer(serializers.ModelSerializer):
         ]
         
     @staticmethod
-    def serializer_for_data(data=empty, new_object=None):
+    def handle_data(data=empty, related_object=None, is_updating=False):
         
         ''' Create a recipe serializer instance if the data includes recipes '''
         if not 'recipes' in data:
             return None
-        recipes_list = data['recipes']
-        for elt in recipes_list:
-            if isinstance(new_object, Food):
-                elt['food'] = new_object.pk
-            elif isinstance(new_object, Ingredient):
-                elt['ingredient'] = new_object.pk
+        create_list = []
+        update_list = []
+        id_list = []
+        for elt in data['recipes']:                
+            if isinstance(related_object, Food):
+                elt['food'] = related_object.pk
+            elif isinstance(related_object, Ingredient):
+                elt['ingredient'] = related_object.pk
+            
+            ''' When updating check if recipe already exists in database '''
+            if is_updating and 'id' in elt:
+                id_list.append(elt['id'])
+                update_list.append(elt)
+            else:
+                create_list.append(elt)
+                
+        if update_list:
+            
+            ''' UPDATE '''
+            ''' Update recipes where id was sent in the update request '''
+            for recipe_data in update_list:
+                recipe = Recipe.objects.get(id=recipe_data['id'])
+                update_recipe_serializer = RecipeSerializer(recipe, data=recipe_data)
+                update_recipe_serializer.is_valid(raise_exception=True)
+                update_recipe_serializer.save()
+                
+        if id_list:
+            
+            ''' DELETE '''
+            ''' If a recipe does not appear in an update it is considered as deleted '''
+            queryset = Recipe.objects.filter(food=related_object).exclude(id__in=id_list)
+            queryset.delete()
         
-        recipes_list = RecipeSerializer.remove_duplicates(recipes_list)
-        return RecipeSerializer(data=recipes_list, many=True)
-    
+        ''' CREATE '''
+        create_list = RecipeSerializer.remove_duplicates(create_list)
+        serializer = RecipeSerializer(data=create_list, many=True)
+        if serializer:
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        
     @staticmethod
     def remove_duplicates(data=empty):
         
@@ -118,11 +148,24 @@ class FoodSerializer(serializers.ModelSerializer):
         # Add user to data from context
         validated_data['user'] = self.context['user']
         new_object = serializers.ModelSerializer.create(self, validated_data)
-        serializer = RecipeSerializer.serializer_for_data(self.initial_data, new_object)
+        serializer = RecipeSerializer.handle_data(self.initial_data, new_object)
         if serializer:
             serializer.is_valid(raise_exception=True)
             serializer.save()
         return new_object
+    
+    def update(self, instance, validated_data):
+        """
+        Override default update method
+        """
+        
+        # Handle recipe updates
+        RecipeSerializer.handle_data(data=self.initial_data, related_object=instance, is_updating=True)
+        
+        # Add user to data from context
+        validated_data['user'] = self.context['user']
+        updated_object = serializers.ModelSerializer.update(self, instance, validated_data)
+        return updated_object
         
     def validate(self, data):
         """
@@ -133,7 +176,10 @@ class FoodSerializer(serializers.ModelSerializer):
         user = self.context['user']
         name = data.get("name", "")
         if name:
-            duplicate_food = Food.objects.filter(user=user, name=name).first()
+            queryset = Food.objects.all()
+            if self.instance:
+                queryset = queryset.exclude(id=self.instance.id)
+            duplicate_food = queryset.filter(user=user, name=name).first()
             if duplicate_food:
                 raise serializers.ValidationError({"message": "User already has food named \"{}\"".format(duplicate_food.name)})
         return data
