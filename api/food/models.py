@@ -19,6 +19,7 @@ class Food(models.Model):
 #     
     class Meta:
         unique_together = ('user', 'name')
+        ordering = ['-id']
 
     def __str__(self):
         return self.name
